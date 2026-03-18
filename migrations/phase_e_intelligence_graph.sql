@@ -1,0 +1,4 @@
+-- Phase E: Intelligence Graph (PostgreSQL)
+-- Nodes: 170,341 addresses + 411 entities + 336 clusters
+-- Edges: 2,973 MEMBER_OF + 83 HAS_LABEL + 2 EXPOSED_TO
+-- Multi-entity graph replaces Neo4j
