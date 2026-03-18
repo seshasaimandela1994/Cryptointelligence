@@ -1,0 +1,5 @@
+-- Phase A: Second-Generation Intelligence Schema
+-- Tables: addresses_master, label_taxonomy, address_labels_v2,
+--         label_evidence, external_intel_sources, address_label_summary,
+--         ai_label_predictions, label_review_queue
+-- Run after all Phase 1-4 migrations
