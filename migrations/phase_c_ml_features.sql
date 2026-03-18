@@ -1,0 +1,7 @@
+-- Phase C: ML Feature Store
+-- address_features_ml: 170,335 addresses
+-- 25 features per address including:
+--   mev_pattern_score, flash_loan_score
+--   mixer_exposure_score, wash_trade_score
+--   pct_interactions per protocol type
+--   cluster_size, kyc_link, sanctions_exposure
