@@ -1,0 +1,5 @@
+-- Phase B: Label Propagation + Confidence Scoring
+-- Cluster propagation: 1,055,592 new labels
+-- Confidence calibration: 4-factor formula
+-- Evidence tracking: 171,533 behavior proofs
+-- Primary label selection per address
