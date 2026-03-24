@@ -50,7 +50,7 @@ func main() {
 	startBlock := uint64(0)
 	fmt.Sscanf(startBlockStr, "%d", &startBlock)
 	if startBlock == 0 {
-		startBlock = 21839500
+		startBlock = 24719493
 	}
 
 	latestNum, _ := client.BlockNumber(ctx)
