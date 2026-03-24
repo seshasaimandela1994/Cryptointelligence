@@ -200,7 +200,7 @@ func generateTokenHandler(c *gin.Context) {
 // ── Health Handler ────────────────────────────────────────────
 func healthHandler(c *gin.Context) {
 	var count int
-	db.QueryRow("SELECT COUNT(*) FROM risk_scores").Scan(&count)
+	db.QueryRow("SELECT COUNT(*) FROM addresses_master").Scan(&count)
 
 	// Check Redis
 	redisOK := true

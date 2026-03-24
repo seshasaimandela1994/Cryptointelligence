@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoIntelligence — Smart Contract Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #020810;
+  --surface:  #070F1E;
+  --border:   #0E2040;
+  --cyan:     #00FFD1;
+  --blue:     #0066FF;
+  --amber:    #FFB400;
+  --red:      #FF2D55;
+  --green:    #00FF88;
+  --purple:   #AA44FF;
+  --text:     #C8D8F0;
+  --muted:    #3A5070;
+  --mono:     'Share Tech Mono', monospace;
+  --sans:     'Barlow', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Grid background */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,255,209,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,209,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Glow orbs */
+body::after {
+  content:'';
+  position:fixed;
+  width:600px; height:600px;
+  background: radial-gradient(circle, rgba(0,102,255,0.06) 0%, transparent 70%);
+  top:-100px; right:-100px;
+  pointer-events:none;
+  z-index:0;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(2,8,16,0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-pulse {
+  width: 7px; height: 7px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 8px var(--green);
+}
+
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(0.7); }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.live-badge {
+  background: rgba(0,255,136,0.1);
+  border: 1px solid rgba(0,255,136,0.3);
+  color: var(--green);
+  padding: 3px 12px;
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 32px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Config banner */
+.config {
+  background: rgba(255,180,0,0.05);
+  border: 1px solid rgba(255,180,0,0.2);
+  padding: 12px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--amber);
+}
+
+.config input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid rgba(255,180,0,0.3);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 6px 12px;
+  outline: none;
+}
+
+.config input:focus { border-color: var(--amber); }
+
+.config button {
+  background: var(--amber);
+  color: var(--bg);
+  border: none;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 16px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+/* Stats row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s;
+}
+
+.stat::before {
+  content:'';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent, var(--cyan));
+}
+
+.stat:hover { border-color: var(--accent, var(--cyan)); }
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--accent, var(--cyan));
+  letter-spacing: -1px;
+}
+
+.stat-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Main grid */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Panel */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+
+.panel-body { padding: 20px; }
+
+/* Search */
+.search-wrap {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 10px 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus { border-color: var(--cyan); }
+.search-input::placeholder { color: var(--muted); }
+
+.btn {
+  background: var(--cyan);
+  color: var(--bg);
+  border: none;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 10px 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+
+.btn:hover { opacity: 0.85; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-sm {
+  font-size: 9px;
+  padding: 5px 12px;
+  background: transparent;
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+}
+
+/* Contract result */
+.contract-result {
+  display: none;
+  animation: fadeUp 0.3s ease;
+}
+
+.contract-result.visible { display: block; }
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(8px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+.risk-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.risk-circle {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+}
+
+.risk-info { flex: 1; }
+
+.risk-type {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.risk-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.flags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.flag {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 3px 10px;
+  border: 1px solid;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.flag.danger { border-color: var(--red); color: var(--red); background: rgba(255,45,85,0.08); }
+.flag.warn { border-color: var(--amber); color: var(--amber); background: rgba(255,180,0,0.08); }
+.flag.info { border-color: var(--cyan); color: var(--cyan); background: rgba(0,255,209,0.08); }
+.flag.good { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.08); }
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 12px;
+}
+
+.detail-row:last-child { border-bottom: none; }
+.detail-key { color: var(--muted); font-family: var(--mono); font-size: 10px; }
+.detail-val { color: var(--text); font-family: var(--mono); font-size: 11px; }
+
+/* Contract list */
+.contract-list { max-height: 400px; overflow-y: auto; }
+
+.contract-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 80px 70px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-family: var(--mono);
+  font-size: 11px;
+  align-items: center;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.contract-row:hover { background: rgba(255,255,255,0.02); }
+
+.contract-row-header {
+  background: rgba(0,255,209,0.05);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.type-badge {
+  font-size: 9px;
+  padding: 2px 8px;
+  letter-spacing: 1px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.type-DEX     { background: rgba(0,102,255,0.15); color: #4488FF; border: 1px solid rgba(0,102,255,0.3); }
+.type-ERC20   { background: rgba(0,255,209,0.1);  color: var(--cyan); border: 1px solid rgba(0,255,209,0.2); }
+.type-MIXER   { background: rgba(255,45,85,0.15); color: var(--red); border: 1px solid rgba(255,45,85,0.3); }
+.type-ERC721  { background: rgba(170,68,255,0.15); color: var(--purple); border: 1px solid rgba(170,68,255,0.3); }
+.type-UNKNOWN { background: rgba(58,80,112,0.3); color: var(--muted); border: 1px solid var(--border); }
+
+.risk-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+/* Bottom grid */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Type distribution */
+.type-dist { display: flex; flex-direction: column; gap: 14px; }
+
+.dist-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dist-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  width: 60px;
+  letter-spacing: 1px;
+}
+
+.dist-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  overflow: hidden;
+}
+
+.dist-bar {
+  height: 100%;
+  transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+  width: 0;
+}
+
+.dist-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  width: 50px;
+  text-align: right;
+}
+
+/* Top contracts */
+.top-contract {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.top-contract:last-child { border-bottom: none; }
+
+.top-rank {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--border);
+  width: 24px;
+  text-align: center;
+}
+
+.top-info { flex: 1; }
+.top-name { color: var(--text); margin-bottom: 2px; font-size: 11px; }
+.top-addr { color: var(--muted); font-size: 9px; }
+.top-calls { color: var(--cyan); font-size: 12px; font-weight: 700; }
+
+/* Loading */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--cyan);
+  padding: 20px 0;
+}
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(0,255,209,0.2);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.error-msg {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--red);
+  padding: 10px 12px;
+  background: rgba(255,45,85,0.08);
+  border: 1px solid rgba(255,45,85,0.2);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* Examples */
+.examples {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.ex-btn {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+
+.ex-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-pulse"></div>
+    CRYPTOINTELLIGENCE — CONTRACT INTEL
+  </div>
+  <div class="header-right">
+    <span class="live-badge">● LIVE</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Config -->
+  <div class="config" id="configBanner">
+    ⚙ API TOKEN:
+    <input type="text" id="tokenInput" placeholder="Paste your API token..." />
+    <button onclick="connect()">CONNECT</button>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat" style="--accent:var(--cyan)">
+      <div class="stat-label">Total Contracts</div>
+      <div class="stat-value" id="statTotal">—</div>
+      <div class="stat-sub">indexed</div>
+    </div>
+    <div class="stat" style="--accent:var(--blue)">
+      <div class="stat-label">DEX Protocols</div>
+      <div class="stat-value" id="statDex">86</div>
+      <div class="stat-sub">59,785 calls</div>
+    </div>
+    <div class="stat" style="--accent:var(--green)">
+      <div class="stat-label">ERC-20 Tokens</div>
+      <div class="stat-value" id="statTokens">33</div>
+      <div class="stat-sub">571 calls</div>
+    </div>
+    <div class="stat" style="--accent:var(--red)">
+      <div class="stat-label">High Risk</div>
+      <div class="stat-value" id="statRisk">8</div>
+      <div class="stat-sub">mixers flagged</div>
+    </div>
+    <div class="stat" style="--accent:var(--amber)">
+      <div class="stat-label">Unique Users</div>
+      <div class="stat-value" id="statUsers">7,741</div>
+      <div class="stat-sub">interacting</div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+
+    <!-- Contract Screener -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Contract Intelligence</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)" id="lastQuery"></span>
+      </div>
+      <div class="panel-body">
+        <div class="search-wrap">
+          <input class="search-input" id="contractInput"
+            placeholder="Enter contract address (0x...)"
+            onkeydown="if(event.key==='Enter') screenContract()" />
+          <button class="btn" onclick="screenContract()">ANALYZE</button>
+        </div>
+
+        <div class="examples">
+          <span style="font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px">EXAMPLES:</span>
+          <button class="ex-btn" onclick="setEx('0x7a250d5630b4cf539739df2c5dacb4c659f2488d')">UNISWAP V2</button>
+          <button class="ex-btn" onclick="setEx('0xe592427a0aece92de3edee1f18e0157c05861564')">UNISWAP V3</button>
+          <button class="ex-btn" onclick="setEx('0x910cbd523d972eb0a6f4cae4618ad62622b39dbf')">TORNADO CASH</button>
+          <button class="ex-btn" onclick="setEx('0xdac17f958d2ee523a2206206994597c13d831ec7')">USDT</button>
+          <button class="ex-btn" onclick="setEx('0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2')">AAVE V3</button>
+        </div>
+
+        <div id="contractLoading" style="display:none">
+          <div class="loading"><div class="spinner"></div>Analyzing contract...</div>
+        </div>
+
+        <div id="contractError" class="error-msg" style="display:none;margin-top:12px"></div>
+
+        <div class="contract-result" id="contractResult" style="margin-top:16px">
+          <div class="risk-banner">
+            <div class="risk-circle" id="riskCircle">—</div>
+            <div class="risk-info">
+              <div class="risk-type" id="riskType">—</div>
+              <div class="risk-sub" id="riskSub">—</div>
+            </div>
+            <div id="contractTypeBadge"></div>
+          </div>
+
+          <div class="flags-row" id="flagsRow"></div>
+          <div id="contractDetails"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contract Type Distribution -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Contract Types</span>
+        <button class="btn btn-sm" onclick="loadTypeStats()">↻</button>
+      </div>
+      <div class="panel-body">
+        <div class="type-dist" id="typeDist">
+          <div class="loading"><div class="spinner"></div>Loading...</div>
+        </div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div class="panel-title" style="margin-bottom:12px">TOP ACTIVITY</div>
+          <div id="topContracts">
+            <div class="loading"><div class="spinner"></div>Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Grid -->
+  <div class="bottom-grid">
+
+    <!-- Contract List -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">All Contracts</span>
+        <div style="display:flex;gap:8px">
+          <select id="typeFilter" onchange="filterContracts()"
+            style="background:var(--bg);border:1px solid var(--border);color:var(--muted);
+                   font-family:var(--mono);font-size:10px;padding:4px 8px;outline:none">
+            <option value="">ALL TYPES</option>
+            <option value="DEX">DEX</option>
+            <option value="ERC20">ERC20</option>
+            <option value="MIXER">MIXER</option>
+            <option value="ERC721">ERC721</option>
+          </select>
+          <button class="btn btn-sm" onclick="loadContracts()">↻ REFRESH</button>
+        </div>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div class="contract-row contract-row-header">
+          <span>CONTRACT</span>
+          <span>TYPE</span>
+          <span>CALLS</span>
+          <span>RISK</span>
+        </div>
+        <div class="contract-list" id="contractList">
+          <div class="loading" style="padding:20px"><div class="spinner"></div>Loading contracts...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- High Risk Contracts -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">High Risk Contracts</span>
+        <button class="btn btn-sm" onclick="loadRiskContracts()">↻ REFRESH</button>
+      </div>
+      <div class="panel-body" style="padding:0">
+        <div class="contract-row contract-row-header">
+          <span>CONTRACT</span>
+          <span>TYPE</span>
+          <span>USERS</span>
+          <span>RISK</span>
+        </div>
+        <div class="contract-list" id="riskContractList">
+          <div class="loading" style="padding:20px"><div class="spinner"></div>Loading...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8080';
+let TOKEN = '';
+
+// Known contracts database (from your entity_labels)
+const KNOWN_CONTRACTS = {
+  '0x7a250d5630b4cf539739df2c5dacb4c659f2488d': { name:'Uniswap V2 Router', type:'DEX', risk:0, verified:true, users:3200 },
+  '0xe592427a0aece92de3edee1f18e0157c05861564': { name:'Uniswap V3 Router', type:'DEX', risk:0, verified:true, users:2800 },
+  '0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45': { name:'Uniswap V3 Router 2', type:'DEX', risk:0, verified:true, users:1900 },
+  '0x910cbd523d972eb0a6f4cae4618ad62622b39dbf': { name:'Tornado Cash 100 ETH', type:'MIXER', risk:99, verified:true, users:0, flags:['OFAC_SANCTIONED','MIXER','HIGH_RISK'] },
+  '0xa160cdab225685da1d56aa342ad8841c3b53f291': { name:'Tornado Cash 1 ETH', type:'MIXER', risk:99, verified:true, users:0, flags:['OFAC_SANCTIONED','MIXER'] },
+  '0xd4b88df4d29f5cedd6857912842cff3b20c8cfa3': { name:'Tornado Cash 0.1 ETH', type:'MIXER', risk:99, verified:true, users:0, flags:['OFAC_SANCTIONED','MIXER'] },
+  '0xdac17f958d2ee523a2206206994597c13d831ec7': { name:'Tether USD (USDT)', type:'ERC20', risk:0, verified:true, users:890 },
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { name:'USD Coin (USDC)', type:'ERC20', risk:0, verified:true, users:750 },
+  '0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2': { name:'Aave V3 Pool', type:'DEX', risk:0, verified:true, users:420 },
+  '0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9': { name:'Aave V2 LendingPool', type:'DEX', risk:0, verified:true, users:380 },
+  '0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7': { name:'Curve 3Pool', type:'DEX', risk:0, verified:true, users:290 },
+  '0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f': { name:'SushiSwap Router', type:'DEX', risk:0, verified:true, users:180 },
+  '0xba12222222228d8ba445958a75a0704d566bf2c8': { name:'Balancer Vault', type:'DEX', risk:0, verified:true, users:95 },
+  '0x1111111254eeb25477b68fb85ed929f73a960582': { name:'1inch Router V5', type:'DEX', risk:0, verified:true, users:210 },
+  '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2': { name:'Wrapped ETH (WETH)', type:'ERC20', risk:0, verified:true, users:320 },
+  '0x00000000006c3852cbef3e08e8df289169ede581': { name:'OpenSea Seaport', type:'ERC721', risk:0, verified:true, users:45 },
+};
+
+// All contracts list data
+const ALL_CONTRACTS = [
+  { addr:'0x7a250d5630b4cf539739df2c5dacb4c659f2488d', name:'Uniswap V2 Router', type:'DEX', calls:18420, risk:0 },
+  { addr:'0xe592427a0aece92de3edee1f18e0157c05861564', name:'Uniswap V3 Router', type:'DEX', calls:15200, risk:0 },
+  { addr:'0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45', name:'Uniswap V3 Router 2', type:'DEX', calls:12800, risk:0 },
+  { addr:'0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2', name:'Aave V3 Pool', type:'DEX', calls:8240, risk:0 },
+  { addr:'0x1111111254eeb25477b68fb85ed929f73a960582', name:'1inch Router V5', type:'DEX', calls:4200, risk:0 },
+  { addr:'0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f', name:'SushiSwap Router', type:'DEX', calls:925, risk:0 },
+  { addr:'0xdac17f958d2ee523a2206206994597c13d831ec7', name:'USDT Contract', type:'ERC20', calls:290, risk:0 },
+  { addr:'0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', name:'USDC Contract', type:'ERC20', calls:180, risk:0 },
+  { addr:'0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', name:'WETH Contract', type:'ERC20', calls:101, risk:0 },
+  { addr:'0x910cbd523d972eb0a6f4cae4618ad62622b39dbf', name:'Tornado Cash 100 ETH', type:'MIXER', calls:0, risk:99 },
+  { addr:'0xa160cdab225685da1d56aa342ad8841c3b53f291', name:'Tornado Cash 1 ETH', type:'MIXER', calls:0, risk:99 },
+  { addr:'0xd4b88df4d29f5cedd6857912842cff3b20c8cfa3', name:'Tornado Cash 0.1 ETH', type:'MIXER', calls:0, risk:99 },
+  { addr:'0x00000000006c3852cbef3e08e8df289169ede581', name:'OpenSea Seaport', type:'ERC721', calls:0, risk:0 },
+  { addr:'0x7be8076f4ea4a4ad08075c2508e481d6c946d12b', name:'OpenSea Wyvern', type:'ERC721', calls:0, risk:0 },
+];
+
+function fmt(n) {
+  if (!n) return '0';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toString();
+}
+
+function riskColor(score) {
+  if (score >= 80) return 'var(--red)';
+  if (score >= 60) return 'var(--amber)';
+  if (score >= 30) return 'var(--purple)';
+  if (score >= 10) return 'var(--cyan)';
+  return 'var(--green)';
+}
+
+function riskLevel(score) {
+  if (score >= 80) return 'CRITICAL';
+  if (score >= 60) return 'HIGH';
+  if (score >= 30) return 'MEDIUM';
+  if (score >= 10) return 'LOW';
+  return 'MINIMAL';
+}
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-IN', {hour12:false});
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function connect() {
+  const t = document.getElementById('tokenInput').value.trim();
+  if (t) {
+    TOKEN = t;
+    document.getElementById('configBanner').style.display = 'none';
+  }
+  loadTypeStats();
+  loadContracts();
+  loadRiskContracts();
+  loadTopContracts();
+  updateStats();
+}
+
+function setEx(addr) {
+  document.getElementById('contractInput').value = addr;
+  screenContract();
+}
+
+function updateStats() {
+  document.getElementById('statTotal').textContent = '133';
+}
+
+// ── Screen Contract ───────────────────────────────────────
+function screenContract() {
+  const addr = document.getElementById('contractInput').value.trim().toLowerCase();
+  if (!addr) return;
+
+  document.getElementById('contractLoading').style.display = 'flex';
+  document.getElementById('contractResult').classList.remove('visible');
+  document.getElementById('contractError').style.display = 'none';
+
+  setTimeout(() => {
+    document.getElementById('contractLoading').style.display = 'none';
+    const info = KNOWN_CONTRACTS[addr];
+    if (info) {
+      renderContract(addr, info);
+    } else {
+      renderUnknownContract(addr);
+    }
+    document.getElementById('lastQuery').textContent =
+      new Date().toLocaleTimeString('en-IN',{hour12:false});
+  }, 600);
+}
+
+function renderContract(addr, info) {
+  const color = riskColor(info.risk);
+  const level = riskLevel(info.risk);
+
+  // Risk circle
+  const circle = document.getElementById('riskCircle');
+  circle.textContent = info.risk;
+  circle.style.borderColor = color;
+  circle.style.color = color;
+
+  document.getElementById('riskType').textContent = level;
+  document.getElementById('riskType').style.color = color;
+  document.getElementById('riskSub').textContent =
+    info.verified ? 'VERIFIED CONTRACT' : 'UNVERIFIED';
+
+  // Type badge
+  document.getElementById('contractTypeBadge').innerHTML =
+    `<span class="type-badge type-${info.type}">${info.type}</span>`;
+
+  // Flags
+  const flags = info.flags || (info.risk >= 80 ? ['HIGH_RISK'] : ['CLEAN']);
+  document.getElementById('flagsRow').innerHTML = flags.map(f => {
+    const cls = f.includes('SANCTIONED')||f.includes('HIGH_RISK') ? 'danger' :
+                f.includes('MIXER') ? 'warn' : 'info';
+    return `<span class="flag ${cls}">${f}</span>`;
+  }).join('') + (info.verified ? '<span class="flag good">VERIFIED</span>' : '');
+
+  // Details
+  document.getElementById('contractDetails').innerHTML = `
+    <div class="detail-row">
+      <span class="detail-key">ADDRESS</span>
+      <span class="detail-val">${addr.slice(0,10)}...${addr.slice(-8)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">CONTRACT NAME</span>
+      <span class="detail-val">${info.name}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">TYPE</span>
+      <span class="detail-val">${info.type}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">UNIQUE USERS</span>
+      <span class="detail-val">${fmt(info.users)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">RISK SCORE</span>
+      <span class="detail-val" style="color:${color}">${info.risk}/100 — ${level}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">VERIFIED</span>
+      <span class="detail-val" style="color:${info.verified?'var(--green)':'var(--amber)'}">
+        ${info.verified ? '✓ YES' : '⚠ NO'}
+      </span>
+    </div>
+    ${info.risk >= 80 ? `
+    <div style="margin-top:12px;padding:10px;background:rgba(255,45,85,0.08);border:1px solid rgba(255,45,85,0.2)">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--red);letter-spacing:1px">
+        ⚠ CRITICAL — OFAC SANCTIONED CONTRACT<br>
+        Any interaction with this contract is flagged.<br>
+        Direct exposure adds 80+ to wallet risk score.
+      </div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('contractResult').classList.add('visible');
+}
+
+function renderUnknownContract(addr) {
+  document.getElementById('riskCircle').textContent = '?';
+  document.getElementById('riskCircle').style.borderColor = 'var(--muted)';
+  document.getElementById('riskCircle').style.color = 'var(--muted)';
+  document.getElementById('riskType').textContent = 'UNKNOWN';
+  document.getElementById('riskType').style.color = 'var(--muted)';
+  document.getElementById('riskSub').textContent = 'NOT IN DATABASE';
+  document.getElementById('contractTypeBadge').innerHTML =
+    '<span class="type-badge type-UNKNOWN">UNKNOWN</span>';
+  document.getElementById('flagsRow').innerHTML =
+    '<span class="flag warn">NOT_INDEXED</span>';
+  document.getElementById('contractDetails').innerHTML = `
+    <div class="detail-row">
+      <span class="detail-key">ADDRESS</span>
+      <span class="detail-val">${addr.slice(0,10)}...${addr.slice(-8)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">STATUS</span>
+      <span class="detail-val" style="color:var(--muted)">Not in indexed dataset</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-key">ACTION</span>
+      <span class="detail-val" style="color:var(--amber)">Index more blocks to identify</span>
+    </div>
+  `;
+  document.getElementById('contractResult').classList.add('visible');
+}
+
+// ── Type Distribution ─────────────────────────────────────
+function loadTypeStats() {
+  const data = [
+    { label:'DEX',    count:86,  color:'var(--blue)',  pct:64 },
+    { label:'ERC20',  count:33,  color:'var(--cyan)',  pct:25 },
+    { label:'MIXER',  count:8,   color:'var(--red)',   pct:6  },
+    { label:'ERC721', count:6,   color:'var(--purple)',pct:5  },
+  ];
+
+  document.getElementById('typeDist').innerHTML = data.map(d => `
+    <div class="dist-row">
+      <span class="dist-label" style="color:${d.color}">${d.label}</span>
+      <div class="dist-bar-wrap">
+        <div class="dist-bar" style="background:${d.color};width:0"
+             data-width="${d.pct}%"></div>
+      </div>
+      <span class="dist-count" style="color:${d.color}">${d.count}</span>
+    </div>
+  `).join('');
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.dist-bar').forEach(bar => {
+      bar.style.width = bar.dataset.width;
+    });
+  }, 100);
+}
+
+// ── Top Contracts ─────────────────────────────────────────
+function loadTopContracts() {
+  const top = ALL_CONTRACTS
+    .filter(c => c.calls > 0)
+    .sort((a,b) => b.calls - a.calls)
+    .slice(0,5);
+
+  document.getElementById('topContracts').innerHTML = top.map((c,i) => `
+    <div class="top-contract" onclick="setEx('${c.addr}')">
+      <div class="top-rank">${i+1}</div>
+      <div class="top-info">
+        <div class="top-name">${c.name}</div>
+        <div class="top-addr">${c.addr.slice(0,10)}...${c.addr.slice(-6)}</div>
+      </div>
+      <div class="top-calls">${fmt(c.calls)}</div>
+    </div>
+  `).join('');
+}
+
+// ── Contract List ─────────────────────────────────────────
+let allContractsData = [...ALL_CONTRACTS];
+
+function loadContracts() {
+  renderContractList(allContractsData);
+}
+
+function filterContracts() {
+  const type = document.getElementById('typeFilter').value;
+  const filtered = type ?
+    allContractsData.filter(c => c.type === type) :
+    allContractsData;
+  renderContractList(filtered);
+}
+
+function renderContractList(contracts) {
+  document.getElementById('contractList').innerHTML = contracts.map(c => {
+    const color = riskColor(c.risk);
+    return `
+      <div class="contract-row" onclick="setEx('${c.addr}')">
+        <span style="color:var(--muted)">
+          <span class="risk-dot" style="background:${color}"></span>
+          ${c.name}
+        </span>
+        <span class="type-badge type-${c.type}">${c.type}</span>
+        <span style="color:var(--cyan)">${fmt(c.calls)}</span>
+        <span style="color:${color}">${c.risk}</span>
+      </div>
+    `;
+  }).join('') || '<div style="padding:20px;font-family:var(--mono);font-size:11px;color:var(--muted)">No contracts found</div>';
+}
+
+// ── High Risk Contracts ───────────────────────────────────
+function loadRiskContracts() {
+  const risky = ALL_CONTRACTS.filter(c => c.risk >= 80)
+    .sort((a,b) => b.risk - a.risk);
+
+  document.getElementById('riskContractList').innerHTML = risky.map(c => {
+    const color = riskColor(c.risk);
+    return `
+      <div class="contract-row" onclick="setEx('${c.addr}')">
+        <span style="color:var(--red)">
+          <span class="risk-dot" style="background:${color}"></span>
+          ${c.name}
+        </span>
+        <span class="type-badge type-${c.type}">${c.type}</span>
+        <span style="color:var(--muted)">—</span>
+        <span style="color:${color};font-weight:700">${c.risk}</span>
+      </div>
+    `;
+  }).join('') || '<div style="padding:20px;font-family:var(--mono);font-size:11px;color:var(--green)">No high risk contracts</div>';
+}
+
+// Init
+loadTypeStats();
+loadContracts();
+loadRiskContracts();
+loadTopContracts();
+updateStats();
+</script>
+</body>
+</html>
