@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { background:#050A12; color:#E2EBF7; font-family:monospace; padding:20px; }
+  .jarvis-box { background:#0A1628; border:1px solid #1A2A44; padding:20px; max-width:800px; margin:auto; }
+  h2 { color:#00D4FF; }
+  textarea { width:100%; background:#050A12; color:#E2EBF7; border:1px solid #1A2A44; padding:10px; font-family:monospace; }
+  input { width:100%; background:#050A12; color:#E2EBF7; border:1px solid #1A2A44; padding:10px; font-family:monospace; margin:8px 0; }
+  button { background:#00D4FF; color:#050A12; border:none; padding:10px 24px; font-weight:bold; cursor:pointer; margin-top:8px; }
+  .answer { background:#050A12; border-left:3px solid #00FF9D; padding:16px; margin-top:16px; white-space:pre-wrap; line-height:1.6; }
+  .action-BLOCK  { color:#FF3B5C; font-weight:bold; }
+  .action-REVIEW { color:#FFB800; font-weight:bold; }
+  .action-MONITOR{ color:#9B5CF6; font-weight:bold; }
+  .action-SAFE   { color:#00FF9D; font-weight:bold; }
+</style>
+</head>
+<body>
+<div class="jarvis-box">
+  <h2>🤖 JARVIS — AI Investigator</h2>
+  <input id="address" placeholder="Address (optional): 0x..." />
+  <textarea id="query" rows="3" placeholder="Ask anything..."></textarea>
+  <button onclick="askJarvis()">INVESTIGATE</button>
+  <div id="result"></div>
+</div>
+<script>
+async function askJarvis() {
+  const query = document.getElementById('query').value;
+  const address = document.getElementById('address').value;
+  document.getElementById('result').innerHTML = '<div class="answer">Investigating...</div>';
+  const body = {query};
+  if (address) body.address = address;
+  const r = await fetch('http://localhost:8082/v1/jarvis', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  document.getElementById('result').innerHTML = `
+    <div class="answer">
+      <span class="action-${d.action}">ACTION: ${d.action} | Confidence: ${d.confidence}%</span>
+
+${d.answer}
+    </div>`;
+}
+</script>
+</body>
+</html>
