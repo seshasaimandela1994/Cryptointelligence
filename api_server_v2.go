@@ -137,7 +137,8 @@ func main() {
 		v1.POST("/batch",           batchHandler)
 		v1.GET("/cluster/:address", clusterHandler)
 		v1.GET("/stats",            statsHandler)
-	}
+	v1.GET("/inflows",          inflowsHandler)
+		}
 
 	port := "8080"
 	fmt.Println()
@@ -556,10 +557,10 @@ func statsHandler(c *gin.Context) {
 	var totalTransfers, totalBlocks, totalLabelled, totalClusters int
 	var totalAddresses, criticalCount, highCount, mediumCount int
 	db.QueryRow("SELECT COUNT(*) FROM token_transfers").Scan(&totalTransfers)
-	db.QueryRow("SELECT COUNT(*) FROM blocks").Scan(&totalBlocks)
+	db.QueryRow("SELECT COUNT(DISTINCT block_number) FROM token_transfers").Scan(&totalBlocks)
 	db.QueryRow("SELECT COUNT(*) FROM address_labels").Scan(&totalLabelled)
 	db.QueryRow("SELECT COUNT(*) FROM clusters").Scan(&totalClusters)
-	db.QueryRow("SELECT COUNT(DISTINCT from_address||to_address) FROM token_transfers").Scan(&totalAddresses)
+	db.QueryRow("SELECT COUNT(*) FROM address_labels WHERE is_primary = TRUE").Scan(&totalAddresses)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='CRITICAL'").Scan(&criticalCount)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='HIGH'").Scan(&highCount)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='MEDIUM'").Scan(&mediumCount)
@@ -625,4 +626,48 @@ func getRiskScore(address string) (RiskResponse, error) {
 	}
 
 	return resp, nil
+}
+
+func inflowsHandler(c *gin.Context) {
+	type TokenInflow struct {
+		Symbol    string  `json:"symbol"`
+		Transfers int64   `json:"transfers"`
+		USDValue  float64 `json:"usd_value"`
+		USDLabel  string  `json:"usd_label"`
+	}
+	type InflowResponse struct {
+		TotalUSD   float64       `json:"total_usd"`
+		TotalLabel string        `json:"total_label"`
+		Tokens     []TokenInflow `json:"tokens"`
+		UpdatedAt  string        `json:"updated_at"`
+	}
+
+	rows, err := db.Query(`SELECT symbol, transfers, usd_value FROM live_dollar_inflows`)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	var tokens []TokenInflow
+	var totalUSD float64
+	for rows.Next() {
+		var t TokenInflow
+		rows.Scan(&t.Symbol, &t.Transfers, &t.USDValue)
+		if t.USDValue >= 1e9 {
+			t.USDLabel = fmt.Sprintf("$%.2fB", t.USDValue/1e9)
+		} else {
+			t.USDLabel = fmt.Sprintf("$%.2fM", t.USDValue/1e6)
+		}
+		totalUSD += t.USDValue
+		tokens = append(tokens, t)
+	}
+
+	totalLabel := fmt.Sprintf("$%.2fB", totalUSD/1e9)
+	c.JSON(200, InflowResponse{
+		TotalUSD:   totalUSD,
+		TotalLabel: totalLabel,
+		Tokens:     tokens,
+		UpdatedAt:  time.Now().Format(time.RFC3339),
+	})
 }

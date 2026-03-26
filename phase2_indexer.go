@@ -29,7 +29,7 @@ func main() {
 
 	dbURL  := os.Getenv("DATABASE_URL")
 	rpcURL := os.Getenv("ETH_RPC_URL")
-	startBlockStr := os.Getenv("START_BLOCK")
+	startBlock := uint64(24730641)
 
 	ctx := context.Background()
 
@@ -47,11 +47,6 @@ func main() {
 	}
 	defer client.Close()
 
-	startBlock := uint64(0)
-	fmt.Sscanf(startBlockStr, "%d", &startBlock)
-	if startBlock == 0 {
-		startBlock = 24719493
-	}
 
 	latestNum, _ := client.BlockNumber(ctx)
 	
