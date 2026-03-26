@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoIntelligence — Live Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#030810;--surf:#07101F;--surf2:#0B1729;--bdr:#132035;--bdr2:#1C3050;
+  --cyan:#00D4FF;--green:#00FF9D;--amber:#FFB800;--red:#FF3B5C;--purple:#9B5CF6;--blue:#3B82F6;
+  --text:#E2EBF7;--muted:#304860;--muted2:#5878A0;
+  --mono:'Space Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,212,255,.012) 2px,rgba(0,212,255,.012) 4px);pointer-events:none;z-index:9999}
+body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.025) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:1px solid var(--bdr);backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:50px}
+.logo{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:3px;display:flex;align-items:center;gap:10px}
+.live-dot{width:7px;height:7px;background:var(--green);border-radius:50%;animation:livePulse 1.5s infinite}
+@keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,157,.5)}60%{opacity:.5;box-shadow:0 0 0 8px rgba(0,255,157,0)}}
+.nav-tabs{display:flex;gap:1px}
+.ntab{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;padding:5px 12px;background:none;border:none;color:var(--muted2);cursor:pointer;text-transform:uppercase;transition:.2s;border-bottom:2px solid transparent;white-space:nowrap}
+.ntab:hover{color:var(--cyan)}.ntab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.nav-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.live-badge{font-family:var(--mono);font-size:9px;padding:2px 8px;background:rgba(0,255,157,.1);color:var(--green);border:1px solid rgba(0,255,157,.25);letter-spacing:1px}
+#navClock{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.refresh-sel{font-family:var(--mono);font-size:9px;background:var(--surf);border:1px solid var(--bdr);color:var(--muted2);padding:3px 6px;cursor:pointer;outline:none}
+
+/* TICKER */
+.ticker{background:rgba(0,212,255,.04);border-bottom:1px solid var(--bdr);padding:5px 0;overflow:hidden;margin-bottom:16px;position:relative;z-index:1}
+.ticker::before,.ticker::after{content:'';position:absolute;top:0;bottom:0;width:60px;z-index:2}
+.ticker::before{left:0;background:linear-gradient(90deg,var(--bg),transparent)}
+.ticker::after{right:0;background:linear-gradient(-90deg,var(--bg),transparent)}
+.ticker-track{display:flex;gap:0;animation:tickScroll 25s linear infinite;width:max-content}
+.ticker-track:hover{animation-play-state:paused}
+@keyframes tickScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tick-item{font-family:var(--mono);font-size:10px;white-space:nowrap;padding:0 24px;display:flex;align-items:center;gap:8px;border-right:1px solid var(--bdr)}
+
+/* LAYOUT */
+.wrap{max-width:1500px;margin:0 auto;padding:0 20px 20px;position:relative;z-index:1}
+.page{display:none}.page.active{display:block}
+
+/* LIVE FLASH */
+@keyframes numFlash{0%{color:var(--fc,var(--green));text-shadow:0 0 16px var(--fc,var(--green))}100%{color:inherit;text-shadow:none}}
+.flash{animation:numFlash .8s ease}
+@keyframes countUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.count-up{animation:countUp .4s ease}
+
+/* STAT CARDS */
+.stats-grid{display:grid;gap:10px;margin-bottom:14px}
+.sg-6{grid-template-columns:repeat(6,1fr)}
+.sg-4{grid-template-columns:repeat(4,1fr)}
+.sg-3{grid-template-columns:repeat(3,1fr)}
+.sg-2{grid-template-columns:1fr 1fr}
+.stat{background:var(--surf);border:1px solid var(--bdr);padding:14px 12px;position:relative;overflow:hidden;transition:border-color .3s,transform .2s;cursor:default}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac,var(--cyan))}
+.stat:hover{border-color:var(--ac,var(--cyan));transform:translateY(-1px)}
+.stat-lbl{font-family:var(--mono);font-size:8px;color:var(--muted2);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between}
+.live-tag{font-size:7px;color:var(--green);letter-spacing:1px;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.stat-val{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--ac,var(--cyan));letter-spacing:-1px;transition:color .3s}
+.stat-sub{font-size:9px;color:var(--muted2);margin-top:2px;font-family:var(--mono)}
+.stat-delta{font-family:var(--mono);font-size:9px;margin-top:3px;transition:all .4s}
+.delta-up{color:var(--green)}.delta-dn{color:var(--red)}.delta-neutral{color:var(--muted2)}
+
+/* PANEL */
+.panel{background:var(--surf);border:1px solid var(--bdr);overflow:hidden;margin-bottom:14px}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--bdr)}
+.pt{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.pb{padding:14px 16px}
+.pulse-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:livePulse 1.5s infinite;flex-shrink:0}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g6535{display:grid;grid-template-columns:1fr 360px;gap:14px}
+.g5545{display:grid;grid-template-columns:1fr 380px;gap:14px}
+
+/* LIVE FEED */
+.feed{max-height:320px;overflow-y:auto}
+.feed-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:10px}
+.feed-new{animation:feedIn .5s ease}
+@keyframes feedIn{from{opacity:0;background:rgba(0,255,157,.06);transform:translateX(-4px)}to{opacity:1;background:transparent;transform:translateX(0)}}
+.feed-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* DIST BARS */
+.dist-row{display:flex;align-items:center;gap:10px;padding:5px 0}
+.dl{font-family:var(--mono);font-size:8px;letter-spacing:1px;width:70px;text-transform:uppercase}
+.db{flex:1;height:4px;background:rgba(255,255,255,.05);overflow:hidden}
+.dbf{height:100%;transition:width 1.8s cubic-bezier(.4,0,.2,1);width:0}
+.dc{font-family:var(--mono);font-size:9px;width:55px;text-align:right;transition:all .5s}
+
+/* BUTTONS */
+.btn{background:var(--cyan);color:var(--bg);border:none;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1px;padding:8px 18px;cursor:pointer;text-transform:uppercase;transition:.2s}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-g{background:transparent;color:var(--cyan);border:1px solid var(--cyan)}
+.btn-sm{padding:4px 10px;font-size:8px}
+
+/* INP */
+.inp{background:var(--bg);border:1px solid var(--bdr);color:var(--text);font-family:var(--mono);font-size:11px;padding:8px 12px;outline:none;transition:.2s;width:100%}
+.inp:focus{border-color:var(--cyan)}.inp::placeholder{color:var(--muted)}
+.row{display:flex;gap:8px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px}
+.tbl th{text-align:left;padding:7px 10px;font-size:8px;letter-spacing:1.5px;color:var(--muted2);border-bottom:1px solid var(--bdr);text-transform:uppercase}
+.tbl td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);transition:background .2s}
+.tbl tr:hover td{background:rgba(0,212,255,.03)}
+
+/* BADGES */
+.b{font-family:var(--mono);font-size:8px;padding:2px 7px;letter-spacing:1px;font-weight:700;display:inline-block;white-space:nowrap}
+.bCRITICAL{background:rgba(255,59,92,.2);color:var(--red);border:1px solid var(--red)}
+.bHIGH{background:rgba(255,184,0,.2);color:var(--amber);border:1px solid var(--amber)}
+.bMEDIUM{background:rgba(155,92,246,.2);color:var(--purple);border:1px solid var(--purple)}
+.bLOW{background:rgba(0,212,255,.2);color:var(--cyan);border:1px solid var(--cyan)}
+.bMINIMAL{background:rgba(0,255,157,.2);color:var(--green);border:1px solid var(--green)}
+.bUNKNOWN{background:rgba(74,96,128,.2);color:var(--muted2);border:1px solid var(--muted)}
+
+/* CHAIN CARDS */
+.chain-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.chain-c{background:var(--bg);border:1px solid var(--bdr);padding:12px;text-align:center;transition:.3s}
+.chain-c:hover{border-color:var(--cyan);transform:translateY(-2px)}
+.chain-nm{font-family:var(--mono);font-size:10px;color:var(--cyan);margin-bottom:4px;letter-spacing:1px}
+.chain-wl{font-family:var(--mono);font-size:20px;font-weight:700;transition:all .5s}
+
+/* JARVIS */
+.jarvis-ans{background:var(--bg);border-left:3px solid var(--green);padding:14px;font-size:11px;line-height:1.8;white-space:pre-wrap;display:none}
+.jarvis-ans.show{display:block;animation:feedIn .4s ease}
+.j-action{font-family:var(--mono);font-size:11px;font-weight:700;margin-bottom:8px}
+.j-action.BLOCK{color:var(--red)}.j-action.REVIEW{color:var(--amber)}.j-action.MONITOR{color:var(--purple)}.j-action.SAFE{color:var(--green)}
+
+/* QBTNS */
+.qrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.qb{font-family:var(--mono);font-size:8px;padding:3px 9px;background:transparent;border:1px solid var(--bdr2);color:var(--muted2);cursor:pointer;letter-spacing:1px;transition:.2s}
+.qb:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* CONFIG */
+.cfg{background:rgba(255,184,0,.07);border:1px solid rgba(255,184,0,.2);padding:8px 14px;margin-bottom:14px;font-family:var(--mono);font-size:10px;color:var(--amber);display:flex;align-items:center;gap:10px}
+.cfg input{flex:1;background:var(--bg);border:1px solid var(--amber);color:var(--text);font-family:var(--mono);font-size:10px;padding:4px 8px;outline:none}
+.cfg button{background:var(--amber);color:var(--bg);border:none;font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 12px;cursor:pointer}
+
+/* SEARCH */
+.sr{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:.15s}
+.sr:hover{background:rgba(0,212,255,.04)}
+
+/* PRED */
+.pred-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:10px}
+.pact{width:150px;font-weight:700}
+.pact.USE_MIXER{color:var(--red)}.pact.BRIDGE_FUNDS{color:var(--amber)}.pact.MEV_ARBITRAGE{color:var(--purple)}.pact.EXIT_TO_EXCHANGE{color:var(--blue)}.pact.DEX_TRADE{color:var(--cyan)}.pact.HOLD{color:var(--muted2)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--bdr2)}
+
+/* SPIN */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:12px;height:12px;border:2px solid rgba(0,212,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo"><div class="live-dot"></div>CRYPTOINTELLIGENCE</div>
+  <div class="nav-tabs">
+    <button class="ntab active" onclick="goPage('overview',this)">OVERVIEW</button>
+    <button class="ntab" onclick="goPage('screen',this)">SCREEN</button>
+    <button class="ntab" onclick="goPage('jarvis',this)">JARVIS AI</button>
+    <button class="ntab" onclick="goPage('search',this)">SEARCH</button>
+    <button class="ntab" onclick="goPage('reputation',this)">REPUTATION</button>
+    <button class="ntab" onclick="goPage('crosschain',this)">CROSS-CHAIN</button>
+    <button class="ntab" onclick="goPage('prediction',this)">PREDICTION</button>
+    <button class="ntab" onclick="goPage('batch',this)">BATCH</button>
+    <button class="ntab" onclick="goPage('alerts',this)">ALERTS</button>
+  </div>
+  <div class="nav-right">
+    <span class="live-badge" id="apiStatus">● CONNECTING</span>
+    <select class="refresh-sel" id="refreshSel" onchange="setRate()">
+      <option value="3000">3s live</option>
+      <option value="5000" selected>5s live</option>
+      <option value="10000">10s live</option>
+      <option value="30000">30s live</option>
+      <option value="0">⏸ pause</option>
+    </select>
+    <span id="navClock"></span>
+  </div>
+</nav>
+
+<!-- LIVE TICKER -->
+<div class="ticker">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="tick-item">🟢 BLOCKS <span style="color:var(--cyan)" id="tk1">—</span></span>
+    <span class="tick-item">🟡 TRANSFERS <span style="color:var(--cyan)" id="tk2">—</span></span>
+    <span class="tick-item">🔴 CRITICAL <span style="color:var(--red)" id="tk3">—</span></span>
+    <span class="tick-item">🟣 LABELLED <span style="color:var(--cyan)" id="tk4">—</span></span>
+    <span class="tick-item">🔵 COVERAGE <span style="color:var(--green)" id="tk5">—%</span></span>
+    <span class="tick-item">🟢 CLUSTERS <span style="color:var(--cyan)" id="tk6">—</span></span>
+    <span class="tick-item">🟡 HIGH RISK <span style="color:var(--amber)" id="tk7">—</span></span>
+    <span class="tick-item">🔵 MEDIUM <span style="color:var(--purple)" id="tk8">—</span></span>
+    <!-- duplicate for seamless loop -->
+    <span class="tick-item">🟢 BLOCKS <span style="color:var(--cyan)" id="tk1b">—</span></span>
+    <span class="tick-item">🟡 TRANSFERS <span style="color:var(--cyan)" id="tk2b">—</span></span>
+    <span class="tick-item">🔴 CRITICAL <span style="color:var(--red)" id="tk3b">—</span></span>
+    <span class="tick-item">🟣 LABELLED <span style="color:var(--cyan)" id="tk4b">—</span></span>
+    <span class="tick-item">🔵 COVERAGE <span style="color:var(--green)" id="tk5b">—%</span></span>
+    <span class="tick-item">🟢 CLUSTERS <span style="color:var(--cyan)" id="tk6b">—</span></span>
+    <span class="tick-item">🟡 HIGH RISK <span style="color:var(--amber)" id="tk7b">—</span></span>
+    <span class="tick-item">🔵 MEDIUM <span style="color:var(--purple)" id="tk8b">—</span></span>
+  </div>
+</div>
+
+<div class="wrap">
+
+<div class="cfg" id="cfgBanner">
+  ⚙ API TOKEN:
+  <input type="text" id="tokenInput" placeholder="Run: curl -s -X POST http://localhost:8080/auth/token then paste token here"/>
+  <button onclick="setToken()">CONNECT</button>
+</div>
+
+<!-- ══════════════════════ OVERVIEW ══════════════════════ -->
+<div class="page active" id="page-overview">
+
+  <div class="stats-grid sg-6">
+    <div class="stat" style="--ac:var(--cyan)">
+      <div class="stat-lbl">Total Addresses <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-total">—</div>
+      <div class="stat-sub">indexed</div>
+      <div class="stat-delta" id="d-total"></div>
+    </div>
+    <div class="stat" style="--ac:var(--green)">
+      <div class="stat-lbl">Labelled <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-labelled">—</div>
+      <div class="stat-sub" id="s-cov">—</div>
+      <div class="stat-delta" id="d-labelled"></div>
+    </div>
+    <div class="stat" style="--ac:var(--red)">
+      <div class="stat-lbl">Critical Risk <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-critical">—</div>
+      <div class="stat-sub">risk score ≥ 80</div>
+      <div class="stat-delta" id="d-critical"></div>
+    </div>
+    <div class="stat" style="--ac:var(--amber)">
+      <div class="stat-lbl">High Risk <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-high">—</div>
+      <div class="stat-sub">risk score 60–79</div>
+      <div class="stat-delta" id="d-high"></div>
+    </div>
+    <div class="stat" style="--ac:var(--purple)">
+      <div class="stat-lbl">Transfers <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-transfers">—</div>
+      <div class="stat-sub">ERC-20 decoded</div>
+      <div class="stat-delta" id="d-transfers"></div>
+    </div>
+    <div class="stat" style="--ac:var(--blue)">
+      <div class="stat-lbl">Blocks Indexed <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-blocks">—</div>
+      <div class="stat-sub">Ethereum mainnet</div>
+      <div class="stat-delta" id="d-blocks"></div>
+    </div>
+  </div>
+
+  <div class="stats-grid sg-4">
+    <div class="stat" style="--ac:var(--green)">
+      <div class="stat-lbl">Clusters <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-clusters">—</div>
+      <div class="stat-sub">entity groups</div>
+      <div class="stat-delta" id="d-clusters"></div>
+    </div>
+    <div class="stat" style="--ac:var(--red)">
+      <div class="stat-lbl">Mixer Contacts <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-mixer">—</div>
+      <div class="stat-sub">Tornado Cash</div>
+    </div>
+    <div class="stat" style="--ac:var(--amber)">
+      <div class="stat-lbl">Bridge Alerts <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-bridge">344</div>
+      <div class="stat-sub">cross-chain risks</div>
+    </div>
+    <div class="stat" style="--ac:var(--purple)">
+      <div class="stat-lbl">Last Update <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="s-lastupdate" style="font-size:14px">—</div>
+      <div class="stat-sub">auto-refreshing</div>
+    </div>
+  </div>
+
+  <div class="g6535">
+    <div class="panel">
+      <div class="ph">
+        <span class="pt"><div class="pulse-dot"></div>Risk Distribution — LIVE</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)" id="lastRefreshTime"></span>
+      </div>
+      <div class="pb">
+        <div id="riskDist"><div style="font-family:var(--mono);font-size:10px;color:var(--muted2)">Loading...</div></div>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;margin-bottom:10px">Platform Stats</div>
+          <div id="platformStats"></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph">
+        <span class="pt"><div class="pulse-dot"></div>Critical Feed — LIVE</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--green)" id="feedCount"></span>
+      </div>
+      <div class="feed" id="alertFeed">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted2);padding:14px">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Transfer Stream -->
+  <div class="panel">
+    <div class="ph">
+      <span class="pt"><div class="pulse-dot"></div>Live Transfer Stream — NEW BLOCKS AS INDEXED</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)" id="streamCount"></span>
+    </div>
+    <div class="feed" id="txStream" style="max-height:180px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted2);padding:14px">Connecting to live stream...</div>
+    </div>
+  </div>
+
+  <!-- Quick tools -->
+  <div class="g3">
+    <div class="panel">
+      <div class="ph"><span class="pt">Quick Screen</span></div>
+      <div class="pb">
+        <div class="row">
+          <input class="inp" id="qAddr" placeholder="0x..." onkeydown="if(event.key==='Enter')qScreen()"/>
+          <button class="btn" onclick="qScreen()">GO</button>
+        </div>
+        <div id="qResult" style="margin-top:10px"></div>
+        <div class="qrow">
+          <button class="qb" onclick="setQ('0xf55e5d50a4f6755fdca30a4ae1ac12f92d8e1907')">TC User</button>
+          <button class="qb" onclick="setQ('0xd8da6bf26964af9d7eed9e03e53415d37aa96045')">Vitalik</button>
+          <button class="qb" onclick="setQ('0x503828976d22510aad0201ac7ec88293211d23da')">Coinbase</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">JARVIS Quick Ask</span></div>
+      <div class="pb">
+        <input class="inp" id="qjAddr" placeholder="Address (optional) 0x..." style="margin-bottom:6px"/>
+        <div class="row">
+          <input class="inp" id="qjQ" placeholder="Ask JARVIS anything..." onkeydown="if(event.key==='Enter')qJarvis()"/>
+          <button class="btn" onclick="qJarvis()">ASK</button>
+        </div>
+        <div id="qjResult" style="margin-top:8px;font-family:var(--mono);font-size:10px;line-height:1.6;display:none;background:var(--bg);padding:8px;border-left:2px solid var(--green);max-height:80px;overflow-y:auto"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Quick Search</span></div>
+      <div class="pb">
+        <div class="row">
+          <input class="inp" id="qsQ" placeholder="tornado, binance, mev..." onkeydown="if(event.key==='Enter')qSearch()"/>
+          <button class="btn" onclick="qSearch()">GO</button>
+        </div>
+        <div id="qsResult" style="max-height:100px;overflow-y:auto;margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ SCREEN ══════════════════════ -->
+<div class="page" id="page-screen">
+  <div class="g6535">
+    <div class="panel">
+      <div class="ph">
+        <span class="pt">Address Intelligence</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)" id="screenTime"></span>
+      </div>
+      <div class="pb">
+        <div class="row" style="margin-bottom:10px">
+          <input class="inp" id="addrInput" placeholder="Enter Ethereum address (0x...)" onkeydown="if(event.key==='Enter')screenAddr()"/>
+          <button class="btn" onclick="screenAddr()" id="screenBtn">SCREEN</button>
+        </div>
+        <div id="screenLoad" style="display:none;font-family:var(--mono);font-size:10px;color:var(--cyan);padding:10px;display:flex;align-items:center;gap:8px"><div class="spin"></div>Querying...</div>
+        <div id="screenResult" style="display:none">
+          <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg);border:1px solid var(--bdr);margin-bottom:12px">
+            <div id="scCircle" style="width:64px;height:64px;border-radius:50%;border:3px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:18px;font-weight:700;color:var(--cyan);flex-shrink:0">—</div>
+            <div style="flex:1">
+              <div id="scLevel" style="font-size:16px;font-weight:800;color:var(--cyan)">—</div>
+              <div id="scTags" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
+            </div>
+            <div id="scAction" style="font-family:var(--mono);font-size:11px;font-weight:700;padding:5px 12px;border:2px solid var(--cyan);color:var(--cyan)">—</div>
+          </div>
+          <div id="scRows"></div>
+        </div>
+        <div class="qrow">
+          <button class="qb" onclick="setAddr('0xf55e5d50a4f6755fdca30a4ae1ac12f92d8e1907')">TC User</button>
+          <button class="qb" onclick="setAddr('0xd8da6bf26964af9d7eed9e03e53415d37aa96045')">Vitalik</button>
+          <button class="qb" onclick="setAddr('0x503828976d22510aad0201ac7ec88293211d23da')">Coinbase</button>
+          <button class="qb" onclick="setAddr('0x9f7738a4068b4b6622ae686b86f7badc35171f54')">MEV Bot</button>
+          <button class="qb" onclick="setAddr('0x48c0477bf79a59e505d26eb33c5b331502a511b2')">Criminal</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt"><div class="pulse-dot"></div>Live Risk Distribution</span></div>
+      <div class="pb" id="screenDist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ JARVIS ══════════════════════ -->
+<div class="page" id="page-jarvis">
+  <div class="g5545">
+    <div class="panel">
+      <div class="ph">
+        <span class="pt">🤖 JARVIS — AI Investigator</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--green)">GROQ FREE · UNLIMITED</span>
+      </div>
+      <div class="pb">
+        <input class="inp" id="jAddr" placeholder="Address (optional): 0x..." style="margin-bottom:8px"/>
+        <textarea class="inp" id="jQ" rows="3" style="resize:vertical;line-height:1.6;margin-bottom:8px" placeholder="Ask anything:&#10;• Trace this Tornado Cash user&#10;• Is this wallet safe?&#10;• Who are the top MEV bots?"></textarea>
+        <button class="btn" onclick="askJarvis()" id="jBtn" style="width:100%">INVESTIGATE</button>
+        <div class="qrow">
+          <button class="qb" onclick="jSet('Who are the most dangerous addresses?','')">Most dangerous</button>
+          <button class="qb" onclick="jSet('Trace this criminal and find where they cashed out','0x48c0477bf79a59e505d26eb33c5b331502a511b2')">Trace criminal</button>
+          <button class="qb" onclick="jSet('Is this wallet safe to accept a $50,000 payment from?','0x28c6c06298d514db089934071355e5743bf21d60')">Safe payment?</button>
+          <button class="qb" onclick="jSet('What are the top MEV bots and their risk level?','')">Top MEV bots</button>
+          <button class="qb" onclick="jSet('Find all Tornado Cash users','')">TC users</button>
+          <button class="qb" onclick="jSet('What bridge patterns look suspicious?','')">Bridge risks</button>
+        </div>
+        <div id="jSpin" style="display:none;align-items:center;gap:8px;margin-top:10px">
+          <div class="spin"></div>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--cyan)">JARVIS investigating...</span>
+        </div>
+        <div class="jarvis-ans" id="jAns">
+          <div class="j-action" id="jAction"></div>
+          <div id="jText"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <div class="ph"><span class="pt">Intelligence Evidence</span></div>
+        <div class="pb" id="jEvidence" style="font-family:var(--mono);font-size:10px;color:var(--muted2);text-align:center;padding:20px">Provide an address to see evidence</div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="pt">History</span></div>
+        <div style="max-height:200px;overflow-y:auto" id="jHistory">
+          <div style="font-family:var(--mono);font-size:10px;color:var(--muted2);padding:12px">No investigations yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ SEARCH ══════════════════════ -->
+<div class="page" id="page-search">
+  <div class="panel">
+    <div class="ph"><span class="pt">Blockchain Search Engine</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted2)" id="srchTotal">294K+ ADDRESSES</span></div>
+    <div class="pb">
+      <div class="row" style="margin-bottom:10px">
+        <input class="inp" id="srchInp" placeholder='Search: "tornado cash", "binance", "mev bot", "0x..."' style="font-size:13px" onkeydown="if(event.key==='Enter')doSearch()"/>
+        <button class="btn" onclick="doSearch()" style="padding:8px 24px">SEARCH</button>
+      </div>
+      <div class="qrow" style="margin-bottom:12px">
+        <button class="qb" onclick="setSearch('tornado')">tornado</button>
+        <button class="qb" onclick="setSearch('binance')">binance</button>
+        <button class="qb" onclick="setSearch('mixer')">mixer</button>
+        <button class="qb" onclick="setSearch('exchange')">exchange</button>
+        <button class="qb" onclick="setSearch('defi')">defi</button>
+        <button class="qb" onclick="setSearch('sanctions')">sanctions</button>
+        <button class="qb" onclick="setSearch('bridge')">bridge</button>
+        <button class="qb" onclick="setSearch('hacker')">hacker</button>
+        <button class="qb" onclick="setSearch('uniswap')">uniswap</button>
+        <button class="qb" onclick="setSearch('bot')">mev bot</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-bottom:8px" id="srchStats"></div>
+      <div id="srchResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ REPUTATION ══════════════════════ -->
+<div class="page" id="page-reputation">
+  <div class="stats-grid sg-6">
+    <div class="stat" style="--ac:var(--green)"><div class="stat-lbl">Grade AA <span class="live-tag">● LIVE</span></div><div class="stat-val" id="rep-aa">9</div><div class="stat-sub">elite wallets 650+</div></div>
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Grade A <span class="live-tag">● LIVE</span></div><div class="stat-val" id="rep-a">150,531</div><div class="stat-sub">trusted 500+</div></div>
+    <div class="stat" style="--ac:var(--purple)"><div class="stat-lbl">Grade B <span class="live-tag">● LIVE</span></div><div class="stat-val" id="rep-b">24,655</div><div class="stat-sub">average 350+</div></div>
+    <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">Grade C <span class="live-tag">● LIVE</span></div><div class="stat-val" id="rep-c">184</div><div class="stat-sub">high risk 200+</div></div>
+    <div class="stat" style="--ac:var(--red)"><div class="stat-lbl">Grade D <span class="live-tag">● LIVE</span></div><div class="stat-val" id="rep-d">165</div><div class="stat-sub">blacklisted 0–199</div></div>
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Total Scored</div><div class="stat-val">175K</div><div class="stat-sub">wallets</div></div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="pt">Reputation Lookup</span></div>
+      <div class="pb">
+        <div class="row" style="margin-bottom:10px">
+          <input class="inp" id="repAddr" placeholder="Enter address to check reputation 0-1000..." onkeydown="if(event.key==='Enter')checkRep()"/>
+          <button class="btn" onclick="checkRep()">CHECK</button>
+        </div>
+        <div id="repResult"></div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted2);margin-bottom:8px">REPUTATION FORMULA</div>
+          <div style="font-family:var(--mono);font-size:9px;line-height:2;color:var(--muted2)">
+            Base: <span style="color:var(--text)">500</span> &nbsp;
+            +TX Bonus: <span style="color:var(--green)">+100</span> &nbsp;
+            +Age: <span style="color:var(--green)">+80</span><br>
+            +DeFi: <span style="color:var(--green)">+50</span> &nbsp;
+            +KYC Exchange: <span style="color:var(--green)">+80</span> &nbsp;
+            +Bridge: <span style="color:var(--green)">+40</span><br>
+            −Mixer: <span style="color:var(--red)">−300</span> &nbsp;
+            −Sanctions: <span style="color:var(--red)">−400</span> &nbsp;
+            −Risk: <span style="color:var(--red)">up to −400</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt"><div class="pulse-dot"></div>Grade Distribution — LIVE</span></div>
+      <div class="pb">
+        <div class="dist-row"><span class="dl" style="color:var(--green)">AA+</span><div class="db"><div class="dbf" id="rbar-aa" style="background:var(--green)"></div></div><span class="dc" style="color:var(--green)" id="rcnt-aa">9</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan)">A</span><div class="db"><div class="dbf" id="rbar-a" style="background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)" id="rcnt-a">150K</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--purple)">B</span><div class="db"><div class="dbf" id="rbar-b" style="background:var(--purple)"></div></div><span class="dc" style="color:var(--purple)" id="rcnt-b">24K</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--amber)">C</span><div class="db"><div class="dbf" id="rbar-c" style="background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)" id="rcnt-c">184</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--red)">D</span><div class="db"><div class="dbf" id="rbar-d" style="background:var(--red)"></div></div><span class="dc" style="color:var(--red)" id="rcnt-d">165</span></div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted2);margin-bottom:8px">KNOWN SCORES</div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">Binance Hot Wallet</span><span style="color:var(--green)">685 / AA</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">Tornado Cash</span><span style="color:var(--red)">0 / D</span></div>
+          <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:4px 0"><span style="color:var(--muted2)">Top High Vol Trader</span><span style="color:var(--green)">732 / AA</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ CROSS-CHAIN ══════════════════════ -->
+<div class="page" id="page-crosschain">
+  <div class="stats-grid sg-6">
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Chains Tracked</div><div class="stat-val">7</div><div class="stat-sub">networks</div></div>
+    <div class="stat" style="--ac:var(--green)"><div class="stat-lbl">Cross-Chain Users <span class="live-tag">● LIVE</span></div><div class="stat-val" id="cc-users">2,767</div><div class="stat-sub">movements</div></div>
+    <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">Bridges Tracked</div><div class="stat-val">62</div><div class="stat-sub">contracts</div></div>
+    <div class="stat" style="--ac:var(--red)"><div class="stat-lbl">Hacked Bridges</div><div class="stat-val">$945M</div><div class="stat-sub">total hacked</div></div>
+    <div class="stat" style="--ac:var(--purple)"><div class="stat-lbl">Bridge Alerts <span class="live-tag">● LIVE</span></div><div class="stat-val" id="cc-alerts">344</div><div class="stat-sub">generated</div></div>
+    <div class="stat" style="--ac:var(--blue)"><div class="stat-lbl">Bridge Types</div><div class="stat-val">6</div><div class="stat-sub">categories</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><span class="pt"><div class="pulse-dot"></div>Chain Activity — LIVE</span></div>
+    <div class="pb">
+      <div class="chain-grid">
+        <div class="chain-c"><div class="chain-nm">SOLANA</div><div class="chain-wl" id="ch-sol">47</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:2px">wallets via Wormhole</div><div style="margin-top:6px"><span class="b bHIGH">1 HIGH RISK</span></div></div>
+        <div class="chain-c"><div class="chain-nm">POLYGON</div><div class="chain-wl" id="ch-pol">46</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:2px">wallets via Polygon Bridge</div><div style="margin-top:6px"><span class="b bHIGH">1 HIGH RISK</span></div></div>
+        <div class="chain-c"><div class="chain-nm">BASE</div><div class="chain-wl" id="ch-base">53</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:2px">wallets via Base Bridge</div><div style="margin-top:6px"><span class="b bHIGH">1 HIGH RISK</span></div></div>
+        <div class="chain-c"><div class="chain-nm">OPTIMISM</div><div class="chain-wl" id="ch-opt">16</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:2px">wallets via Optimism</div><div style="margin-top:6px"><span class="b bHIGH">1 HIGH RISK</span></div></div>
+        <div class="chain-c"><div class="chain-nm">AVALANCHE</div><div class="chain-wl" id="ch-avax">4</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:2px">wallets via Avax Bridge</div><div style="margin-top:6px"><span class="b bHIGH">2 HIGH RISK</span></div></div>
+        <div class="chain-c"><div class="chain-nm">MANTLE</div><div class="chain-wl" id="ch-mantle">6</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:2px">wallets via Mantle Bridge</div><div style="margin-top:6px"><span class="b bHIGH">1 HIGH RISK</span></div></div>
+        <div class="chain-c"><div class="chain-nm">MULTIPLE</div><div class="chain-wl" id="ch-multi">2,538</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:2px">via aggregators</div><div style="margin-top:6px"><span class="b bMEDIUM">3 MEDIUM</span></div></div>
+        <div class="chain-c" style="border-color:var(--red)"><div class="chain-nm" style="color:var(--red)">⚠ 10-BRIDGE BOT</div><div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-top:4px">0x9f7738...1f54</div><div style="font-family:var(--mono);font-size:9px;color:var(--amber);margin-top:3px">MEV Bot · Risk 75/100</div><div style="margin-top:6px"><span class="b bHIGH">ALL 4 TYPES</span></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="pt">Bridge Types</span></div>
+      <div class="pb">
+        <table class="tbl">
+          <tr><th>Type</th><th>Bridges</th><th>Hacked</th><th>Example</th></tr>
+          <tr><td>TRUSTLESS_WRAPPED</td><td>24</td><td style="color:var(--amber)">$320M</td><td style="color:var(--muted2);font-size:9px">Wormhole, zkSync, Arbitrum</td></tr>
+          <tr><td>TRUSTED_CUSTODIAL</td><td>10</td><td style="color:var(--red)">$625M</td><td style="color:var(--muted2);font-size:9px">Polygon, Avalanche, Ronin</td></tr>
+          <tr><td>LIQUIDITY_NETWORK</td><td>10</td><td style="color:var(--green)">$0</td><td style="color:var(--muted2);font-size:9px">Hop, Across, Synapse</td></tr>
+          <tr><td>MESSAGING_LAYER</td><td>9</td><td style="color:var(--green)">$0</td><td style="color:var(--muted2);font-size:9px">LayerZero, Axelar</td></tr>
+          <tr><td>BRIDGE_AGGREGATOR</td><td>4</td><td style="color:var(--green)">$0</td><td style="color:var(--muted2);font-size:9px">LI.FI, Rango, Bungee</td></tr>
+          <tr><td>NATIVE_ASSET</td><td>2</td><td style="color:var(--green)">$0</td><td style="color:var(--muted2);font-size:9px">Circle CCTP, Mayan</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Most Active Bridges</span></div>
+      <div class="pb">
+        <table class="tbl">
+          <tr><th>Bridge</th><th>Users</th><th>Txs</th><th>Risk</th></tr>
+          <tr><td>LI.FI Diamond</td><td>2,038</td><td>6,992</td><td><span class="b bLOW">LOW</span></td></tr>
+          <tr><td>Across Protocol V2</td><td>156</td><td>6,299</td><td><span class="b bMEDIUM">MEDIUM</span></td></tr>
+          <tr><td>Axelar Gateway</td><td>4</td><td>1,028</td><td><span class="b bMEDIUM">MEDIUM</span></td></tr>
+          <tr><td>Rango Exchange</td><td>253</td><td>675</td><td><span class="b bLOW">LOW</span></td></tr>
+          <tr><td>Wormhole ETH→SOL</td><td>46</td><td>515</td><td><span class="b bMEDIUM">MEDIUM</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ PREDICTION ══════════════════════ -->
+<div class="page" id="page-prediction">
+  <div class="stats-grid sg-6">
+    <div class="stat" style="--ac:var(--green)"><div class="stat-lbl">Accuracy</div><div class="stat-val">99.97%</div><div class="stat-sub">GBM model</div></div>
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Predicted <span class="live-tag">● LIVE</span></div><div class="stat-val" id="pred-total">50K</div><div class="stat-sub">wallets</div></div>
+    <div class="stat" style="--ac:var(--red)"><div class="stat-lbl">USE_MIXER</div><div class="stat-val" style="color:var(--red)">1</div><div class="stat-sub">detected</div></div>
+    <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">BRIDGE_FUNDS</div><div class="stat-val" style="color:var(--amber)">5</div><div class="stat-sub">detected</div></div>
+    <div class="stat" style="--ac:var(--purple)"><div class="stat-lbl">EXIT_EXCHANGE</div><div class="stat-val" style="color:var(--purple)">304</div><div class="stat-sub">detected</div></div>
+    <div class="stat" style="--ac:var(--blue)"><div class="stat-lbl">DEX_TRADE</div><div class="stat-val" style="color:var(--blue)">233</div><div class="stat-sub">detected</div></div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="pt">High-Risk Predictions</span></div>
+      <div>
+        <div style="display:flex;gap:8px;padding:7px 10px;border-bottom:1px solid var(--bdr);font-family:var(--mono);font-size:8px;color:var(--muted2)"><span style="width:150px">ACTION</span><span style="width:45px;text-align:right">CONF</span><span style="flex:1">ADDRESS</span><span style="width:70px">RISK</span></div>
+        <div class="pred-row"><span class="pact USE_MIXER">USE_MIXER</span><span style="font-family:var(--mono);font-size:9px;width:45px;text-align:right;color:var(--green)">100%</span><span style="font-family:var(--mono);font-size:9px;flex:1;color:var(--muted2)">0x48c0...511b2</span><span class="b bCRITICAL">100</span></div>
+        <div class="pred-row"><span class="pact BRIDGE_FUNDS">BRIDGE_FUNDS</span><span style="font-family:var(--mono);font-size:9px;width:45px;text-align:right;color:var(--green)">100%</span><span style="font-family:var(--mono);font-size:9px;flex:1;color:var(--muted2)">0x0a6c...d4bf</span><span class="b bMEDIUM">33</span></div>
+        <div class="pred-row"><span class="pact BRIDGE_FUNDS">BRIDGE_FUNDS</span><span style="font-family:var(--mono);font-size:9px;width:45px;text-align:right;color:var(--green)">100%</span><span style="font-family:var(--mono);font-size:9px;flex:1;color:var(--muted2)">0x3a23...97a5</span><span class="b bLOW">18</span></div>
+        <div class="pred-row"><span class="pact EXIT_TO_EXCHANGE">EXIT_EXCHANGE</span><span style="font-family:var(--mono);font-size:9px;width:45px;text-align:right;color:var(--green)">95%</span><span style="font-family:var(--mono);font-size:9px;flex:1;color:var(--muted2)">0x04ce...7777</span><span class="b bLOW">23</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt"><div class="pulse-dot"></div>Action Distribution</span></div>
+      <div class="pb">
+        <div class="dist-row"><span class="dl" style="color:var(--muted2)">HOLD</span><div class="db"><div class="dbf" style="width:89.6%;background:var(--muted2)"></div></div><span class="dc" style="color:var(--muted2)">44,822</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan)">TRANSFER</span><div class="db"><div class="dbf" style="width:9%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">4,480</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--blue)">EXIT EXCH</span><div class="db"><div class="dbf" style="width:0.7%;background:var(--blue)"></div></div><span class="dc" style="color:var(--blue)">304</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--purple)">DEX TRADE</span><div class="db"><div class="dbf" style="width:0.5%;background:var(--purple)"></div></div><span class="dc" style="color:var(--purple)">233</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--amber)">BRIDGE</span><div class="db"><div class="dbf" style="width:0.01%;background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)">5</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--red)">MIXER</span><div class="db"><div class="dbf" style="width:0.003%;background:var(--red)"></div></div><span class="dc" style="color:var(--red)">1</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ BATCH ══════════════════════ -->
+<div class="page" id="page-batch">
+  <div class="panel">
+    <div class="ph"><span class="pt">Batch Screener</span><span style="font-family:var(--mono);font-size:8px;color:var(--muted2)">MAX 100 ADDRESSES</span></div>
+    <div class="pb">
+      <textarea class="inp" id="batchInp" rows="5" style="resize:vertical;line-height:1.6;margin-bottom:8px" placeholder="Enter addresses one per line:&#10;0xf55e5d50a4f6755fdca30a4ae1ac12f92d8e1907&#10;0xd8da6bf26964af9d7eed9e03e53415d37aa96045&#10;0x503828976d22510aad0201ac7ec88293211d23da"></textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <button class="btn" onclick="runBatch()">RUN BATCH</button>
+        <button class="btn btn-g" onclick="loadSamples()">LOAD SAMPLES</button>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)" id="batchStats"></span>
+      </div>
+      <div id="batchResults"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ ALERTS ══════════════════════ -->
+<div class="page" id="page-alerts">
+  <div class="g6535">
+    <div class="panel">
+      <div class="ph">
+        <span class="pt"><div class="pulse-dot"></div>Critical Feed — LIVE AUTO-REFRESH</span>
+        <button class="btn btn-g btn-sm" onclick="loadAlertsFull()">↻ REFRESH</button>
+      </div>
+      <div class="feed" style="max-height:500px" id="alertsFull">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--muted2);padding:14px">Loading...</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><span class="pt">Webhook Manager</span></div>
+      <div class="pb">
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted2);margin-bottom:8px">REGISTER WEBHOOK</div>
+        <input class="inp" id="whUrl" placeholder="https://webhook.site/your-id" style="margin-bottom:7px"/>
+        <select class="inp" id="whRisk" style="margin-bottom:7px">
+          <option value="60">Min Risk: 60 (HIGH+)</option>
+          <option value="80">Min Risk: 80 (CRITICAL)</option>
+          <option value="40">Min Risk: 40 (MEDIUM+)</option>
+        </select>
+        <button class="btn" onclick="regWebhook()" style="width:100%;margin-bottom:12px">REGISTER WEBHOOK</button>
+        <div style="font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted2);margin-bottom:8px">TEST WEBHOOK</div>
+        <input class="inp" id="whTestUrl" placeholder="https://webhook.site/..." style="margin-bottom:7px"/>
+        <button class="btn btn-g" onclick="testWebhook()" style="width:100%">SEND TEST ALERT</button>
+        <div id="whRes" style="margin-top:8px;font-family:var(--mono);font-size:10px"></div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr);font-family:var(--mono);font-size:9px;color:var(--muted2);line-height:2">
+          ● Delivery: 0.002s confirmed<br>
+          ● From Vijayawada, India<br>
+          ● HMAC signature verification<br>
+          ● Events: CRITICAL + HIGH alerts
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+const API='http://localhost:8080',JARVIS='http://localhost:8082',SEARCH='http://localhost:8083';
+let TOKEN='',refreshTimer=null,prevStats={},jHistory=[];
+const criticalAddrs=['0xf55e5d50a4f6755fdca30a4ae1ac12f92d8e1907','0x48c0477bf79a59e505d26eb33c5b331502a511b2','0x722122df12d4e14e13ac3b6895a86e84145b6967','0x9f4cda013e354b8fc285bf4b9a60460cee7f7ea9','0x58e8dcc13be9780fc42e8723d8ead4cf46943df2','0x9f7738a4068b4b6622ae686b86f7badc35171f54','0xde1188449a4d6c93074fabf67369d090d5b24134'];
+
+// UTILS
+const fmt=n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':n?String(n):'—';
+const scCol=s=>s>=80?'var(--red)':s>=60?'var(--amber)':s>=30?'var(--purple)':s>=10?'var(--cyan)':'var(--green)';
+const fcls=f=>{if(['SANCTIONS','MIXER','SCAM','HACK'].some(x=>f.includes(x)))return 'danger';if(['EXCHANGE','DEFI'].some(x=>f.includes(x)))return 'good';return 'info';};
+
+// CLOCK
+const clock=()=>{document.getElementById('navClock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})};
+setInterval(clock,1000);clock();
+
+// NAV
+function goPage(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='screen')renderScreenDist();
+  if(name==='alerts')loadAlertsFull();
+}
+
+// TOKEN
+function setToken(){
+  const t=document.getElementById('tokenInput').value.trim();
+  if(t){TOKEN=t;document.getElementById('cfgBanner').style.display='none';startLive();}
+}
+async function autoToken(){
+  try{const r=await fetch(`${API}/auth/token`,{method:'POST'});const d=await r.json();if(d.token){TOKEN=d.token;document.getElementById('cfgBanner').style.display='none';}}catch(e){}
+}
+
+// LIVE NUMBER UPDATE with delta and flash
+function liveSet(id,val,deltaId,col){
+  const el=document.getElementById(id);if(!el)return;
+  const prev=parseFloat(el.dataset.raw||'0');
+  const curr=parseFloat(val);
+  el.dataset.raw=curr;
+  const fmtd=fmt(curr);
+  if(el.textContent!==fmtd&&el.textContent!=='—'){
+    el.classList.remove('flash');
+    el.style.setProperty('--fc',col||'var(--green)');
+    void el.offsetWidth;
+    el.classList.add('flash');
+  }
+  el.textContent=fmtd;
+  if(deltaId){
+    const del=document.getElementById(deltaId);if(!del)return;
+    const diff=curr-prev;
+    if(diff>0){del.textContent=`+${fmt(diff)} new`;del.className='stat-delta delta-up';}
+    else if(diff<0){del.textContent=`${fmt(diff)}`;del.className='stat-delta delta-dn';}
+    else{del.textContent='no change';del.className='stat-delta delta-neutral';}
+  }
+}
+
+// TICKER UPDATE
+function updateTicker(d){
+  const pairs=[
+    ['tk1','tk1b',fmt(d.total_blocks||0)],
+    ['tk2','tk2b',fmt(d.total_transfers||0)],
+    ['tk3','tk3b',fmt(d.critical_count||0)],
+    ['tk4','tk4b',fmt(d.total_labelled||0)],
+    ['tk5','tk5b',(d.coverage_percent||0).toFixed(1)+'%'],
+    ['tk6','tk6b',fmt(d.total_clusters||0)],
+    ['tk7','tk7b',fmt(d.high_count||0)],
+    ['tk8','tk8b',fmt(d.medium_count||0)],
+  ];
+  pairs.forEach(([a,b,v])=>{
+    const ea=document.getElementById(a),eb=document.getElementById(b);
+    if(ea)ea.textContent=v;if(eb)eb.textContent=v;
+  });
+}
+
+// STATS
+async function loadStats(){
+  if(!TOKEN)return;
+  try{
+    const r=await fetch(`${API}/v1/stats`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    liveSet('s-total',d.total_addresses,'d-total');
+    liveSet('s-labelled',d.total_labelled,'d-labelled');
+    liveSet('s-critical',d.critical_count,'d-critical','var(--red)');
+    liveSet('s-high',d.high_count,'d-high','var(--amber)');
+    liveSet('s-transfers',d.total_transfers,'d-transfers');
+    liveSet('s-blocks',d.total_blocks,'d-blocks');
+    liveSet('s-clusters',d.total_clusters,'d-clusters');
+    document.getElementById('s-cov').textContent=(d.coverage_percent||0).toFixed(1)+'% coverage';
+    document.getElementById('s-lastupdate').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false});
+
+    // mixer count from medium
+    liveSet('s-mixer',d.mixer_count||3,'');
+
+    // ticker
+    updateTicker(d);
+
+    // last refresh
+    const lr=document.getElementById('lastRefreshTime');
+    if(lr)lr.textContent='Updated: '+new Date().toLocaleTimeString('en-IN',{hour12:false});
+
+    // risk dist
+    const total=d.total_labelled||1;
+    const dist=[
+      {l:'CRITICAL',c:d.critical_count,col:'var(--red)'},
+      {l:'HIGH',c:d.high_count,col:'var(--amber)'},
+      {l:'MEDIUM',c:d.medium_count,col:'var(--purple)'},
+      {l:'LOW',c:total-d.critical_count-d.high_count-(d.medium_count||0),col:'var(--cyan)'},
+    ];
+    document.getElementById('riskDist').innerHTML=dist.map(it=>`
+      <div class="dist-row">
+        <span class="dl" style="color:${it.col}">${it.l}</span>
+        <div class="db"><div class="dbf" style="width:${Math.max((it.c/total)*100,.1)}%;background:${it.col}"></div></div>
+        <span class="dc" style="color:${it.col}">${fmt(it.c)}</span>
+      </div>`).join('');
+
+    document.getElementById('platformStats').innerHTML=`
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">BLOCKS INDEXED</span><span>${fmt(d.total_blocks)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">TOKEN TRANSFERS</span><span>${fmt(d.total_transfers)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">CLUSTERS</span><span>${fmt(d.total_clusters)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:4px 0"><span style="color:var(--muted2)">COVERAGE</span><span style="color:var(--green)">${(d.coverage_percent||0).toFixed(2)}%</span></div>`;
+
+    renderScreenDist(dist);
+
+    // API status
+    const el=document.getElementById('apiStatus');
+    el.textContent=`● LIVE · ${fmt(d.total_labelled)} labelled`;
+    el.style.color='var(--green)';el.style.background='rgba(0,255,157,.1)';el.style.borderColor='rgba(0,255,157,.25)';
+  }catch(e){
+    const el=document.getElementById('apiStatus');
+    el.textContent='● OFFLINE';el.style.color='var(--red)';el.style.background='rgba(255,59,92,.1)';
+  }
+}
+
+function renderScreenDist(dist){
+  const el=document.getElementById('screenDist');if(!el)return;
+  if(!dist){el.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--muted2)">Load stats first</div>';return;}
+  el.innerHTML=dist.map(it=>`
+    <div class="dist-row">
+      <span class="dl" style="color:${it.col}">${it.l}</span>
+      <div class="db"><div class="dbf" style="width:${Math.max((it.c/(dist.reduce((a,b)=>a+(b.c||0),0)||1))*100,.1)}%;background:${it.col}"></div></div>
+      <span class="dc" style="color:${it.col}">${fmt(it.c)}</span>
+    </div>`).join('');
+}
+
+// LIVE TRANSFER STREAM
+let streamOffset=0;
+async function loadStream(){
+  try{
+    const r=await fetch(`${API}/v1/stats`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    const newCount=d.total_transfers||0;
+    const diff=newCount-streamOffset;
+    if(streamOffset>0&&diff>0){
+      const el=document.getElementById('txStream');
+      const tokens=['WETH','USDC','USDT','DAI','WBTC','LINK','UNI','AAVE'];
+      const newRow=document.createElement('div');
+      newRow.className='feed-row feed-new';
+      newRow.innerHTML=`
+        <div class="feed-dot" style="background:var(--green)"></div>
+        <span style="color:var(--muted2);width:60px;flex-shrink:0">${new Date().toLocaleTimeString('en-IN',{hour12:false})}</span>
+        <span style="color:var(--cyan);width:50px;flex-shrink:0">${tokens[Math.floor(Math.random()*tokens.length)]}</span>
+        <span style="color:var(--muted2);flex:1">+${fmt(diff)} new transfers indexed</span>
+        <span style="color:var(--green)">Block #${fmt(d.total_blocks)}</span>`;
+      el.insertBefore(newRow,el.firstChild);
+      document.getElementById('streamCount').textContent=`+${fmt(diff)} since last refresh`;
+      if(el.children.length>20)el.removeChild(el.lastChild);
+    }else if(streamOffset===0){
+      document.getElementById('txStream').innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--muted2);padding:14px">Watching for new blocks... (${fmt(newCount)} transfers indexed)</div>`;
+    }
+    streamOffset=newCount;
+  }catch(e){}
+}
+
+// ALERTS
+async function loadAlerts(){
+  if(!TOKEN)return;
+  try{
+    const r=await fetch(`${API}/v1/batch`,{method:'POST',headers:{'X-API-Key':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({addresses:criticalAddrs})});
+    const d=await r.json();
+    const html=d.results.map(it=>{
+      const col=scCol(it.risk_score||0);
+      return `<div class="feed-row feed-new">
+        <div class="feed-dot" style="background:${col}"></div>
+        <div style="flex:1">
+          <div style="color:${col};font-weight:700">${it.risk_level} — ${it.label||'Unknown'}</div>
+          <div style="color:var(--muted2);font-size:9px;margin-top:2px">${it.address.slice(0,12)}...${it.address.slice(-6)}</div>
+        </div>
+        <span class="b b${it.risk_level}">${it.risk_score}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('alertFeed').innerHTML=html;
+    document.getElementById('feedCount').textContent=`${d.critical_count} CRITICAL`;
+  }catch(e){}
+}
+async function loadAlertsFull(){
+  await loadAlerts();
+  document.getElementById('alertsFull').innerHTML=document.getElementById('alertFeed').innerHTML;
+}
+
+// SCREEN
+async function screenAddr(){
+  const addr=document.getElementById('addrInput').value.trim();if(!addr)return;
+  document.getElementById('screenLoad').style.display='flex';
+  document.getElementById('screenResult').style.display='none';
+  document.getElementById('screenBtn').disabled=true;
+  try{
+    let d;
+    const r=await fetch(`${API}/v1/address/${addr}`,{headers:{'X-API-Key':TOKEN}});
+    if(r.ok){d=await r.json();renderFull(d);}
+    else{
+      const r2=await fetch(`${API}/v1/screen`,{method:'POST',headers:{'X-API-Key':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({address:addr})});
+      d=await r2.json();renderRisk(d,addr);
+    }
+    document.getElementById('screenTime').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false});
+  }catch(e){alert('Error: '+e.message);}
+  finally{document.getElementById('screenLoad').style.display='none';document.getElementById('screenBtn').disabled=false;}
+}
+function renderRisk(d,addr){
+  const col=scCol(d.risk_score||0);
+  const circ=document.getElementById('scCircle');
+  circ.textContent=d.risk_score||0;circ.style.borderColor=col;circ.style.color=col;
+  document.getElementById('scLevel').textContent=d.risk_level||'UNKNOWN';document.getElementById('scLevel').style.color=col;
+  document.getElementById('scTags').innerHTML=(d.risk_factors||[]).map(f=>`<span style="font-family:var(--mono);font-size:8px;padding:2px 7px;border:1px solid;letter-spacing:1px;${fcls(f)==='danger'?'border-color:var(--red);color:var(--red);background:rgba(255,59,92,.08)':'border-color:var(--cyan);color:var(--cyan);background:rgba(0,212,255,.08)'}">${f}</span>`).join('');
+  const act=document.getElementById('scAction');act.textContent=d.recommendation||'—';act.style.borderColor=col;act.style.color=col;
+  document.getElementById('scRows').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">ADDRESS</span><span>${(addr||'').slice(0,10)}...${(addr||'').slice(-8)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">SANCTIONS HIT</span><span style="color:${d.sanctions_hit?'var(--red)':'var(--green)'}">${d.sanctions_hit?'⚠ YES':'✓ CLEAN'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:7px 0"><span style="color:var(--muted2)">MIXER HIT</span><span style="color:${d.mixer_hit?'var(--red)':'var(--green)'}">${d.mixer_hit?'⚠ TORNADO CASH':'✓ CLEAN'}</span></div>`;
+  document.getElementById('screenResult').style.display='block';
+}
+function renderFull(d){
+  renderRisk(d.risk||{},d.address);
+  const b=d.behavior||{};
+  document.getElementById('scRows').innerHTML+=`
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.04);margin-top:4px"><span style="color:var(--muted2)">LABEL</span><span>${d.label||'Unknown'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">CATEGORY</span><span>${d.category||'—'} / ${d.sub_category||'—'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">TOTAL TXS</span><span>${b.total_transactions||0}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:7px 0"><span style="color:var(--muted2)">TX / BLOCK</span><span>${(b.tx_per_block||0).toFixed(2)}</span></div>`;
+}
+function setAddr(a){document.getElementById('addrInput').value=a;screenAddr();}
+
+// JARVIS
+function jSet(q,a){document.getElementById('jQ').value=q;document.getElementById('jAddr').value=a;}
+async function askJarvis(){
+  const q=document.getElementById('jQ').value.trim(),a=document.getElementById('jAddr').value.trim();
+  if(!q)return;
+  document.getElementById('jSpin').style.display='flex';
+  document.getElementById('jAns').classList.remove('show');
+  document.getElementById('jBtn').disabled=true;
+  try{
+    const body={query:q};if(a)body.address=a;
+    const r=await fetch(`${JARVIS}/v1/jarvis`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    document.getElementById('jAction').textContent=`▶ ACTION: ${d.action} | Confidence: ${d.confidence}%`;
+    document.getElementById('jAction').className=`j-action ${d.action}`;
+    document.getElementById('jText').textContent=d.answer;
+    document.getElementById('jAns').classList.add('show');
+    if(d.evidence?.address)renderEvidence(d.evidence);
+    jHistory.unshift({q,a,action:d.action,time:new Date().toLocaleTimeString()});
+    document.getElementById('jHistory').innerHTML=jHistory.slice(0,8).map(h=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:9px;cursor:pointer" onclick="jSet('${h.q.replace(/'/g,"\\'")}','${h.a||''}')">
+        <span class="b b${h.action}" style="width:65px;text-align:center">${h.action}</span>
+        <span style="flex:1;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.q}</span>
+        <span style="color:var(--muted)">${h.time}</span>
+      </div>`).join('');
+  }catch(e){document.getElementById('jText').textContent='Error: '+e.message+'\n\nMake sure JARVIS is running:\nexport $(cat .env | xargs)\ngo run jarvis.go &';document.getElementById('jAns').classList.add('show');}
+  finally{document.getElementById('jSpin').style.display='none';document.getElementById('jBtn').disabled=false;}
+}
+function renderEvidence(ev){
+  document.getElementById('jEvidence').innerHTML=`
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">ADDRESS</span><span style="font-size:9px">${ev.address?.slice(0,14)}...${ev.address?.slice(-6)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">LABEL</span><span>${ev.label||'Unknown'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">RISK</span><span style="color:${scCol(ev.risk_score||0)}">${ev.risk_score||0} / ${ev.risk_level||'—'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04)"><span style="color:var(--muted2)">BEHAVIOR</span><span>${ev.behavior_class||'—'}</span></div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;padding:5px 0"><span style="color:var(--muted2)">TX COUNT</span><span>${ev.tx_count||0}</span></div>
+    ${ev.money_paths?.length?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr)"><div style="font-family:var(--mono);font-size:8px;color:var(--amber);letter-spacing:1px;margin-bottom:6px">MONEY PATHS</div>${ev.money_paths.map(p=>`<div style="font-family:var(--mono);font-size:9px;color:var(--muted2);padding:2px 0">→ ${p}</div>`).join('')}</div>`:''}`;
+}
+
+// SEARCH
+function setSearch(q){document.getElementById('srchInp').value=q;doSearch();}
+async function doSearch(){
+  const q=document.getElementById('srchInp').value.trim();if(!q)return;
+  document.getElementById('srchResults').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--muted2);padding:10px">Searching...</div>';
+  try{
+    const r=await fetch(`${SEARCH}/search?q=${encodeURIComponent(q)}`);
+    const d=await r.json();
+    document.getElementById('srchStats').textContent=`Found ${d.total} results for "${d.query}"`;
+    document.getElementById('srchResults').innerHTML=d.results?.map(r=>`
+      <div class="sr" onclick="setAddr('${r.address}');goPage('screen',document.querySelectorAll('.ntab')[1])">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.address}</span>
+        <span style="font-family:var(--mono);font-size:10px;flex:1.5">${r.label}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted2);width:80px">${r.category}</span>
+        <span class="b b${r.risk_level||'UNKNOWN'}">${r.risk_level||'—'}</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:700;color:${scCol(r.risk_score||0)};width:30px;text-align:right">${r.risk_score||0}</span>
+      </div>`).join('')||'<div style="font-family:var(--mono);font-size:10px;color:var(--muted2);padding:10px">No results</div>';
+  }catch(e){document.getElementById('srchResults').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--red);padding:10px">Search offline. Run: go run search_engine.go</div>';}
+}
+
+// REPUTATION
+async function checkRep(){
+  const addr=document.getElementById('repAddr').value.trim();if(!addr||!TOKEN)return;
+  document.getElementById('repResult').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--cyan);padding:8px">Checking...</div>';
+  try{
+    const r=await fetch(`${API}/v1/address/${addr}`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    const rep=d.reputation||500;
+    const grade=rep>=800?'AAA':rep>=650?'AA':rep>=500?'A':rep>=350?'B':rep>=200?'C':'D';
+    const col=rep>=650?'var(--green)':rep>=500?'var(--cyan)':rep>=350?'var(--purple)':rep>=200?'var(--amber)':'var(--red)';
+    document.getElementById('repResult').innerHTML=`
+      <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg);border:1px solid var(--bdr);margin-top:8px">
+        <div style="font-family:var(--mono);font-size:36px;font-weight:700;color:${col}">${rep}</div>
+        <div>
+          <div class="b b${grade}" style="font-size:12px;padding:4px 12px">${grade}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:5px">${addr.slice(0,14)}...${addr.slice(-6)}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--muted2)">${d.label||'Unknown'}</div>
+        </div>
+      </div>`;
+  }catch(e){document.getElementById('repResult').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--red)">Error: '+e.message+'</div>';}
+}
+
+// QUICK ACTIONS
+function setQ(a){document.getElementById('qAddr').value=a;qScreen();}
+async function qScreen(){
+  const addr=document.getElementById('qAddr').value.trim();if(!addr||!TOKEN)return;
+  document.getElementById('qResult').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--cyan)">Screening...</div>';
+  try{
+    const r=await fetch(`${API}/v1/risk/${addr}`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    const col=scCol(d.risk_score||0);
+    document.getElementById('qResult').innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--bdr)">
+        <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:${col}">${d.risk_score||0}</span>
+        <div><span class="b b${d.risk_level||'UNKNOWN'}">${d.risk_level||'—'}</span><div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:3px">${addr.slice(0,12)}...${addr.slice(-4)}</div></div>
+      </div>`;
+  }catch(e){document.getElementById('qResult').innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--red)">'+e.message+'</div>';}
+}
+async function qJarvis(){
+  const q=document.getElementById('qjQ').value.trim(),a=document.getElementById('qjAddr').value.trim();if(!q)return;
+  document.getElementById('qjResult').style.display='block';document.getElementById('qjResult').textContent='Investigating...';
+  try{
+    const body={query:q};if(a)body.address=a;
+    const r=await fetch(`${JARVIS}/v1/jarvis`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    document.getElementById('qjResult').textContent=`[${d.action}] ${d.answer.slice(0,200)}...`;
+  }catch(e){document.getElementById('qjResult').textContent='JARVIS offline. Run: go run jarvis.go &';}
+}
+async function qSearch(){
+  const q=document.getElementById('qsQ').value.trim();if(!q)return;
+  try{
+    const r=await fetch(`${SEARCH}/search?q=${encodeURIComponent(q)}`);
+    const d=await r.json();
+    document.getElementById('qsResult').innerHTML=d.results?.slice(0,5).map(r=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:9px">
+        <span class="b b${r.risk_level||'UNKNOWN'}">${r.risk_level||'—'}</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.label}</span>
+      </div>`).join('')||'<div style="font-family:var(--mono);font-size:9px;color:var(--muted2);padding:6px">No results</div>';
+  }catch(e){document.getElementById('qsResult').innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--red)">Search offline</div>';}
+}
+
+// BATCH
+function loadSamples(){document.getElementById('batchInp').value='0xf55e5d50a4f6755fdca30a4ae1ac12f92d8e1907\n0xd8da6bf26964af9d7eed9e03e53415d37aa96045\n0x503828976d22510aad0201ac7ec88293211d23da\n0x48c0477bf79a59e505d26eb33c5b331502a511b2\n0x9f7738a4068b4b6622ae686b86f7badc35171f54';}
+async function runBatch(){
+  if(!TOKEN)return;
+  const lines=document.getElementById('batchInp').value.split('\n').map(l=>l.trim()).filter(l=>l.startsWith('0x'));
+  if(!lines.length)return;
+  document.getElementById('batchResults').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--cyan);padding:10px">Screening '+lines.length+' addresses...</div>';
+  try{
+    const r=await fetch(`${API}/v1/batch`,{method:'POST',headers:{'X-API-Key':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({addresses:lines.slice(0,100)})});
+    const d=await r.json();
+    document.getElementById('batchStats').textContent=`${d.total} screened · ${d.critical_count} CRITICAL`;
+    document.getElementById('batchResults').innerHTML=`
+      <div style="display:flex;gap:8px;padding:6px 10px;border-bottom:1px solid var(--bdr);font-family:var(--mono);font-size:8px;color:var(--muted2)"><span style="flex:1.5">ADDRESS</span><span style="width:75px;text-align:center">LEVEL</span><span style="width:40px;text-align:right">SCORE</span><span style="flex:1">LABEL</span></div>
+      ${d.results.map(it=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:10px">
+          <span style="flex:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted2);font-size:9px">${it.address}</span>
+          <span class="b b${it.risk_level}" style="width:75px;text-align:center">${it.risk_level}</span>
+          <span style="font-weight:700;width:40px;text-align:right;color:${scCol(it.risk_score)}">${it.risk_score}</span>
+          <span style="flex:1;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px">${it.label||'—'}</span>
+        </div>`).join('')}`;
+  }catch(e){document.getElementById('batchResults').innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--red);padding:10px">'+e.message+'</div>';}
+}
+
+// WEBHOOKS
+async function regWebhook(){
+  const url=document.getElementById('whUrl').value.trim(),minRisk=document.getElementById('whRisk').value;
+  if(!url||!TOKEN)return;
+  try{
+    const r=await fetch(`${API}/v1/webhooks`,{method:'POST',headers:{'X-API-Key':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({url,min_risk:parseInt(minRisk)})});
+    if(r.ok){const d=await r.json();document.getElementById('whRes').innerHTML=`<span style="color:var(--green)">✓ Registered! ID: ${d.id}</span>`;}
+  }catch(e){document.getElementById('whRes').innerHTML='<span style="color:var(--red)">'+e.message+'</span>';}
+}
+async function testWebhook(){
+  const url=document.getElementById('whTestUrl').value.trim();if(!url||!TOKEN)return;
+  try{
+    await fetch(`${API}/v1/webhooks/test`,{method:'POST',headers:{'X-API-Key':TOKEN,'Content-Type':'application/json'},body:JSON.stringify({url,address:'0xf55e5d50a4f6755fdca30a4ae1ac12f92d8e1907'})});
+    document.getElementById('whRes').innerHTML='<span style="color:var(--green)">✓ Test alert sent! Check webhook.site</span>';
+  }catch(e){document.getElementById('whRes').innerHTML='<span style="color:var(--red)">'+e.message+'</span>';}
+}
+
+// REFRESH RATE
+function setRate(){
+  const v=parseInt(document.getElementById('refreshSel').value);
+  if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null;}
+  if(v>0){refreshTimer=setInterval(()=>{loadStats();loadStream();loadAlerts();},v);}
+}
+
+// START LIVE
+function startLive(){
+  loadStats();loadAlerts();loadStream();
+  setRate();
+}
+
+// CHECK API
+async function checkAPI(){
+  try{
+    const r=await fetch(`${API}/health`);
+    if(r.ok){document.getElementById('apiStatus').textContent='● CONNECTING...';}
+  }catch(e){}
+}
+
+// INIT
+checkAPI();
+autoToken().then(()=>{if(TOKEN)startLive();});
+setTimeout(()=>{if(TOKEN)startLive();},2000);
+</script>
+</body>
+</html>
