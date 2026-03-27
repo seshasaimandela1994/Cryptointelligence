@@ -175,6 +175,10 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
     <button class="ntab" onclick="goPage('prediction',this)">PREDICTION</button>
     <button class="ntab" onclick="goPage('batch',this)">BATCH</button>
     <button class="ntab" onclick="goPage('alerts',this)">ALERTS</button>
+    <button class="ntab" onclick="goPage('classification',this)">CLASSIFICATION</button>
+    <button class="ntab" onclick="goPage('exchanges',this)">EXCHANGES</button>
+    <button class="ntab" onclick="goPage('cexv2',this)">CEX REGISTRY</button>
+    <button class="ntab" onclick="goPage('detection',this)">DETECTION ENGINE</button>
   </div>
   <div class="nav-right">
     <span class="live-badge" id="apiStatus">● CONNECTING</span>
@@ -285,6 +289,37 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
       <div class="stat-sub">auto-refreshing</div>
     </div>
   </div>
+
+  <!-- DOLLAR INFLOWS LIVE -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph">
+      <span class="pt"><div class="pulse-dot"></div>Dollar Inflows — LIVE</span>
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green)" id="totalInflow">Loading...</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0">
+      <div style="padding:14px 16px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr)">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);letter-spacing:2px;margin-bottom:4px">WETH <span style="color:var(--green);animation:blink 2s infinite">● LIVE</span></div>
+        <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--cyan)" id="inf-weth">—</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:2px" id="inf-weth-tx">— transfers</div>
+      </div>
+      <div style="padding:14px 16px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr)">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);letter-spacing:2px;margin-bottom:4px">USDC <span style="color:var(--green);animation:blink 2s infinite">● LIVE</span></div>
+        <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--green)" id="inf-usdc">—</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:2px" id="inf-usdc-tx">— transfers</div>
+      </div>
+      <div style="padding:14px 16px;border-right:1px solid var(--bdr);border-bottom:1px solid var(--bdr)">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);letter-spacing:2px;margin-bottom:4px">USDT <span style="color:var(--green);animation:blink 2s infinite">● LIVE</span></div>
+        <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--amber)" id="inf-usdt">—</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:2px" id="inf-usdt-tx">— transfers</div>
+      </div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--bdr)">
+        <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);letter-spacing:2px;margin-bottom:4px">DAI <span style="color:var(--green);animation:blink 2s infinite">● LIVE</span></div>
+        <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--purple)" id="inf-dai">—</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:2px" id="inf-dai-tx">— transfers</div>
+      </div>
+    </div>
+  </div>
+
 
   <div class="g6535">
     <div class="panel">
@@ -675,6 +710,720 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
   </div>
 </div>
 
+
+<!-- ══════════════════════ CLASSIFICATION ══════════════════════ -->
+<div class="page" id="page-classification">
+
+  <!-- HERO STATS -->
+  <div class="stats-grid sg-4" style="margin-bottom:14px">
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Wallets Classified <span class="live-tag">● LIVE</span></div><div class="stat-val">170,335</div><div class="stat-sub">across 11 tiers · 176 labels</div></div>
+    <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">Whale Wallets 🐳</div><div class="stat-val">523</div><div class="stat-sub">whale + mega + giga</div></div>
+    <div class="stat" style="--ac:var(--red)"><div class="stat-lbl">Sanctioned 🚨</div><div class="stat-val">2</div><div class="stat-sub">OFAC SDN confirmed</div></div>
+    <div class="stat" style="--ac:var(--purple)"><div class="stat-lbl">Behavior Tagged</div><div class="stat-val">2,658</div><div class="stat-sub">arb, farming, MEV, DeFi</div></div>
+  </div>
+
+  <!-- WALLET LOOKUP -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph"><span class="pt">🔍 WALLET CLASSIFICATION LOOKUP — FULL 11-TIER PROFILE</span></div>
+    <div class="pb">
+      <div class="row" style="margin-bottom:10px">
+        <input class="inp" id="clsAddr" placeholder="Enter address to see full 11-tier classification..." onkeydown="if(event.key==='Enter')classifyWallet()"/>
+        <button class="btn" onclick="classifyWallet()">CLASSIFY</button>
+      </div>
+      <div class="qrow" style="margin-bottom:10px">
+        <button class="qb" onclick="clsSet('0xf55e5d50a4f6755fdca30a4ae1ac12f92d8e1907')">TC User</button>
+        <button class="qb" onclick="clsSet('0xd8da6bf26964af9d7eed9e03e53415d37aa96045')">Vitalik</button>
+        <button class="qb" onclick="clsSet('0x503828976d22510aad0201ac7ec88293211d23da')">Coinbase</button>
+        <button class="qb" onclick="clsSet('0x9f7738a4068b4b6622ae686b86f7badc35171f54')">MEV Bot</button>
+        <button class="qb" onclick="clsSet('0x48c0477bf79a59e505d26eb33c5b331502a511b2')">Criminal</button>
+      </div>
+      <div id="clsResult" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- TIER ROWS -->
+  <div class="g3" style="margin-bottom:12px">
+
+    <!-- TIER 1: ACTIVITY STATE -->
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--cyan)">① ACTIVITY STATE</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">170,335 wallets · 15 labels</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">newly_created</span><div class="db"><div class="dbf" style="width:66.5%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">113,191</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">one_time</span><div class="db"><div class="dbf" style="width:61.7%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">105,138</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">low_activity</span><div class="db"><div class="dbf" style="width:28.1%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">47,883</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">active_wallet</span><div class="db"><div class="dbf" style="width:10.2%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">17,314</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--amber);width:120px;font-size:8px">hyper_active</span><div class="db"><div class="dbf" style="width:0.9%;background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)">1,554</span></div>
+        <div style="margin-top:6px;font-family:var(--mono);font-size:8px;color:var(--muted2)">+10 more: dormant, reactivated, burst, seasonal, dust, empty, archived...</div>
+      </div>
+    </div>
+
+    <!-- TIER 2: WEALTH -->
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--green)">② WEALTH SEGMENT</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">170,335 wallets · 12 labels</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div class="dist-row"><span class="dl" style="color:var(--green);width:120px;font-size:8px">🦐 shrimp</span><div class="db"><div class="dbf" style="width:73.4%;background:var(--green)"></div></div><span class="dc" style="color:var(--green)">124,971</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--green);width:120px;font-size:8px">🐟 fish</span><div class="db"><div class="dbf" style="width:21.7%;background:var(--green)"></div></div><span class="dc" style="color:var(--green)">36,911</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">🐬 dolphin</span><div class="db"><div class="dbf" style="width:3.9%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">6,643</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--amber);width:120px;font-size:8px">🦈 shark</span><div class="db"><div class="dbf" style="width:0.76%;background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)">1,287</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--amber);width:120px;font-size:8px">🐳 whale</span><div class="db"><div class="dbf" style="width:0.25%;background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)">418</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--red);width:120px;font-size:8px">🐋 mega_whale</span><div class="db"><div class="dbf" style="width:0.06%;background:var(--red)"></div></div><span class="dc" style="color:var(--red)">105</span></div>
+      </div>
+    </div>
+
+    <!-- TIER 4: BEHAVIOR -->
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--purple)">④ BEHAVIOR / STRATEGY</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">2,658 wallets · 20 labels</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div class="dist-row"><span class="dl" style="color:var(--purple);width:120px;font-size:8px">arbitrage_bot</span><div class="db"><div class="dbf" style="width:58.5%;background:var(--purple)"></div></div><span class="dc" style="color:var(--purple)">1,554</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--purple);width:120px;font-size:8px">yield_farmer</span><div class="db"><div class="dbf" style="width:38.6%;background:var(--purple)"></div></div><span class="dc" style="color:var(--purple)">1,026</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">dex_trader</span><div class="db"><div class="dbf" style="width:14%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">372</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--green);width:120px;font-size:8px">long_term_holder</span><div class="db"><div class="dbf" style="width:3%;background:var(--green)"></div></div><span class="dc" style="color:var(--green)">78</span></div>
+        <div style="margin-top:6px;font-family:var(--mono);font-size:8px;color:var(--muted2)">+16 more: mev_bot, sandwich_bot, sniper_bot, copy_trader, nft_trader, airdrop_farmer, sybil_farmer, swing_trader, accumulation, distribution, hedging...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RISK + ENTITY + CROSSCHAIN -->
+  <div class="g3" style="margin-bottom:12px">
+
+    <!-- TIER 5: RISK -->
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--red)">⑤ RISK / COMPLIANCE</span><span style="font-family:var(--mono);font-size:9px;color:var(--red)">2 CRITICAL</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px">
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">sanctioned</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">terrorist_financing</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">darknet_market</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">ransomware</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">exploit</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">hacker</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">phishing</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">scam</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">rug_pull</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">ponzi</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">fraud_ring</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red);background:rgba(255,59,92,.1)">malware</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber);background:rgba(255,184,0,.1)">mixer</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber);background:rgba(255,184,0,.1)">tornado_cash</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green);background:rgba(0,255,157,.1)">kyc_verified</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green);background:rgba(0,255,157,.1)">compliant</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green);background:rgba(0,255,157,.1)">regulated</span>
+        </div>
+        <div style="padding:8px;background:rgba(255,59,92,.08);border:1px solid rgba(255,59,92,.2);font-family:var(--mono);font-size:9px;color:var(--red)">
+          DETECTED: 2 sanctioned_wallet · 3 tornado_cash_user
+        </div>
+      </div>
+    </div>
+
+    <!-- TIER 3: ENTITY -->
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--blue)">③ ENTITY TYPE</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">54,087 wallets · 25 labels</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div class="dist-row"><span class="dl" style="color:var(--blue);width:120px;font-size:8px">retail_wallet</span><div class="db"><div class="dbf" style="width:99%;background:var(--blue)"></div></div><span class="dc" style="color:var(--blue)">53,752</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">exchange_deposit</span><div class="db"><div class="dbf" style="width:0.6%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">335</span></div>
+        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">cex</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">hot_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">cold_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">custodial</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">dao_treasury</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">multisig</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">institutional</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">government</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">defi_protocol</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">foundation</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">developer</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">validator</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIER 9: CROSS-CHAIN -->
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--cyan)">⑨ CROSS-CHAIN</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">25 wallets · 10 labels</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">bridge_user</span><div class="db"><div class="dbf" style="width:76%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">19</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);width:120px;font-size:8px">multichain</span><div class="db"><div class="dbf" style="width:24%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">6</span></div>
+        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">wrapped_asset</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">cross_chain_arb</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">bridge_exploit</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">chain_hopper</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">omni_chain</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">relay_bridge</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">liquidity_migrator</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">cross_chain_sink</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REMAINING TIERS IN 2 COLS -->
+  <div class="g2">
+    <!-- TIERS 6,7,8 -->
+    <div>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="ph"><span class="pt" style="color:var(--amber)">⑥ TX PATTERN</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">372 wallets · 15 labels</span></div>
+        <div class="pb" style="padding:10px 14px">
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">bridge</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">cross_chain_router</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">aggregator</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">dex_trader</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">batching</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">payout</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">payroll</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">escrow</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">routing</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">splitting</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">consolidation</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">high_velocity</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">looping</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">circular_flow</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="pt" style="color:#F472B6">⑦ GRAPH RELATIONS</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">15 labels</span></div>
+        <div class="pb" style="padding:10px 14px">
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">clustered</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">parent</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">child</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">hub_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">spoke</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">sink</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">source</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">relay</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">aggregator_node</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">high_degree</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">isolated</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">bridge_node</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">shadow_cluster</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">linked</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #F472B6;color:#F472B6">inferred_entity</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIERS 8,10,11 -->
+    <div>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="ph"><span class="pt" style="color:#FB923C">⑧ LIFECYCLE STAGE</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">12 labels</span></div>
+        <div class="pb" style="padding:10px 14px">
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">genesis</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">early_adopter</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">ico_participant</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">ido_participant</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">airdrop_receiver</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">farming</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">matured</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">exit_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">profit_taken</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">loss_exit</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">inactive_end</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #FB923C;color:#FB923C">burned</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-bottom:12px">
+        <div class="ph"><span class="pt" style="color:#A3E635">⑩ TOKEN INTERACTION</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">10 labels</span></div>
+        <div class="pb" style="padding:10px 14px">
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">erc20_holder</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">nft_holder</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">stablecoin_heavy</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">meme_coin_trader</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">governance_holder</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">lp_token_holder</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">staking_holder</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">high_diversity</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid #A3E635;color:#A3E635">single_asset</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--muted2);color:var(--muted2)">inactive_asset</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><span class="pt" style="color:var(--purple)">⑪ AI / INTELLIGENCE FLAGS</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">12 labels</span></div>
+        <div class="pb" style="padding:10px 14px">
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green)">labeled</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--muted2);color:var(--muted2)">unlabeled</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--purple);color:var(--purple)">ai_predicted</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--purple);color:var(--purple)">probabilistic_cluster</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green)">confidence_high</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">confidence_low</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--purple);color:var(--purple)">watchlist</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">flagged</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">under_investigation</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">monitored</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">anomaly_detected</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">suspicious_pattern</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════ EXCHANGES ══════════════════════ -->
+<div class="page" id="page-exchanges">
+
+  <!-- HERO -->
+  <div class="stats-grid sg-6" style="margin-bottom:14px">
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Exchanges Tracked <span class="live-tag">● LIVE</span></div><div class="stat-val" id="ex-total">48</div><div class="stat-sub">registered entities</div></div>
+    <div class="stat" style="--ac:var(--green)"><div class="stat-lbl">Regulated</div><div class="stat-val" style="color:var(--green)">29</div><div class="stat-sub">verified jurisdictions</div></div>
+    <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">Offshore</div><div class="stat-val" style="color:var(--amber)">19</div><div class="stat-sub">unregulated</div></div>
+    <div class="stat" style="--ac:var(--red)"><div class="stat-lbl">Critical Risk</div><div class="stat-val" style="color:var(--red)">3</div><div class="stat-sub">FTX, Celsius, Mt.Gox</div></div>
+    <div class="stat" style="--ac:var(--purple)"><div class="stat-lbl">Wallets Labeled</div><div class="stat-val">70</div><div class="stat-sub">ETH addresses</div></div>
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">MiCA Compliant</div><div class="stat-val">14</div><div class="stat-sub">EU ready 2026</div></div>
+  </div>
+
+  <!-- EXCHANGE LOOKUP -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph"><span class="pt">🔍 EXCHANGE WALLET LOOKUP</span><span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">4-LAYER INTELLIGENCE</span></div>
+    <div class="pb">
+      <div class="row" style="margin-bottom:10px">
+        <input class="inp" id="exAddr" placeholder="Enter any Ethereum address to check exchange ownership, role, confidence..." onkeydown="if(event.key==='Enter')lookupExchange()"/>
+        <button class="btn" onclick="lookupExchange()">LOOKUP</button>
+      </div>
+      <div class="qrow" style="margin-bottom:10px">
+        <button class="qb" onclick="exSet('0xbe0eb53f46cd790cd13851d5eff43d12404d33e8')">Binance Cold</button>
+        <button class="qb" onclick="exSet('0xa090e606e30bd747d4e6245a1517ebe430f0057e')">Coinbase Cold</button>
+        <button class="qb" onclick="exSet('0xe853c56864a2ebe4576a807d26fdc4a0ada51919')">Kraken Cold</button>
+        <button class="qb" onclick="exSet('0x2faf487a4414fe77e2327f0bf4ae2a264a776ad2')">FTX (bankrupt)</button>
+        <button class="qb" onclick="exSet('0x8aceab8167c80cb8b3de7fa6228b889bb1130ee8')">Celsius (bankrupt)</button>
+      </div>
+      <div id="exResult" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- EXCHANGE REGISTRY TABLE -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph">
+      <span class="pt"><div class="pulse-dot"></div>EXCHANGE REGISTRY — 48 ENTITIES</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="inp" id="exFilter" placeholder="Filter..." style="width:140px;padding:3px 8px;font-size:9px" oninput="filterExchanges()"/>
+        <select id="exTierFilter" onchange="filterExchanges()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--muted2);font-family:var(--mono);font-size:9px;padding:3px 6px">
+          <option value="">All Tiers</option>
+          <option value="tier_1">Tier 1</option>
+          <option value="tier_2">Tier 2</option>
+          <option value="tier_3">Tier 3</option>
+        </select>
+        <select id="exRiskFilter" onchange="filterExchanges()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--muted2);font-family:var(--mono);font-size:9px;padding:3px 6px">
+          <option value="">All Risk</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;max-height:400px;overflow-y:auto">
+      <table class="tbl" id="exTable">
+        <thead><tr>
+          <th>Exchange</th><th>Tier</th><th>Status</th><th>Category</th>
+          <th>Jurisdiction</th><th>Regulatory</th><th>AML Risk</th>
+          <th>Wallets</th><th>Avg Conf</th><th>POR</th><th>MiCA</th>
+        </tr></thead>
+        <tbody id="exBody">
+          <tr><td colspan="11" style="text-align:center;padding:20px;color:var(--muted2)">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RISK MAP + WALLET ROLES -->
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="pt">RISK DISTRIBUTION</span></div>
+      <div class="pb">
+        <div class="dist-row"><span class="dl" style="color:var(--green)">REGULATED</span><div class="db"><div class="dbf" style="width:60.4%;background:var(--green)"></div></div><span class="dc" style="color:var(--green)">29</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--amber)">OFFSHORE</span><div class="db"><div class="dbf" style="width:39.6%;background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)">19</span></div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">
+          <div class="dist-row"><span class="dl" style="color:var(--green);font-size:8px">LOW AML</span><div class="db"><div class="dbf" style="width:52%;background:var(--green)"></div></div><span class="dc" style="color:var(--green)">25</span></div>
+          <div class="dist-row"><span class="dl" style="color:var(--amber);font-size:8px">MEDIUM</span><div class="db"><div class="dbf" style="width:29%;background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)">14</span></div>
+          <div class="dist-row"><span class="dl" style="color:var(--red);font-size:8px">HIGH</span><div class="db"><div class="dbf" style="width:12.5%;background:var(--red)"></div></div><span class="dc" style="color:var(--red)">6</span></div>
+          <div class="dist-row"><span class="dl" style="color:var(--red);font-size:8px">CRITICAL</span><div class="db"><div class="dbf" style="width:6.25%;background:var(--red)"></div></div><span class="dc" style="color:var(--red)">3</span></div>
+        </div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-bottom:6px;letter-spacing:1px">ENFORCEMENT HISTORY (18 exchanges)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">Binance</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">KuCoin</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">Bitfinex</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">Kraken</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">Gemini</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">Poloniex</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">FTX</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">Celsius</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">WazirX</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">CoinEx</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">AscendEX</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">Bitrue</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span class="pt">WALLET ROLE DISTRIBUTION</span></div>
+      <div class="pb">
+        <div class="dist-row"><span class="dl" style="color:var(--cyan);font-size:8px;width:130px">hot_wallet</span><div class="db"><div class="dbf" style="width:74%;background:var(--cyan)"></div></div><span class="dc" style="color:var(--cyan)">52</span></div>
+        <div class="dist-row"><span class="dl" style="color:var(--blue);font-size:8px;width:130px">cold_wallet</span><div class="db"><div class="dbf" style="width:26%;background:var(--blue)"></div></div><span class="dc" style="color:var(--blue)">18</span></div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-bottom:8px;letter-spacing:1px">12 SUPPORTED WALLET ROLES</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">exchange_hot_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--blue);color:var(--blue)">exchange_cold_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_deposit_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_withdrawal_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_treasury_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_settlement_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_fee_collection_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_liquidity_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_market_making_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_otc_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_internal_routing_wallet</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_gas_funding_wallet</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-bottom:6px;letter-spacing:1px">CONFIDENCE BANDS</div>
+          <div class="dist-row"><span class="dl" style="color:var(--green);font-size:8px;width:80px">HIGH ≥0.90</span><div class="db"><div class="dbf" style="width:85%;background:var(--green)"></div></div><span class="dc" style="color:var(--green)">60</span></div>
+          <div class="dist-row"><span class="dl" style="color:var(--amber);font-size:8px;width:80px">MED ≥0.70</span><div class="db"><div class="dbf" style="width:14%;background:var(--amber)"></div></div><span class="dc" style="color:var(--amber)">10</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INDIA + LATAM + BANKRUPT -->
+  <div class="g3">
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--amber)">🇮🇳 INDIA EXCHANGES</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <table class="tbl">
+          <tr><th>Exchange</th><th>Status</th><th>Risk</th></tr>
+          <tr><td>CoinDCX</td><td style="color:var(--green)">active</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>WazirX</td><td style="color:var(--amber)">active</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--amber);color:var(--amber)">medium</span></td></tr>
+          <tr><td>ZebPay</td><td style="color:var(--green)">active</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>CoinSwitch</td><td style="color:var(--green)">active</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Bitbns</td><td style="color:var(--amber)">active</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--amber);color:var(--amber)">medium</span></td></tr>
+          <tr><td>Pi42</td><td style="color:var(--green)">active</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Mudrex</td><td style="color:var(--green)">active</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+        </table>
+        <div style="margin-top:8px;font-family:var(--mono);font-size:8px;color:var(--muted2)">All FIU-IND registered · WazirX $230M hack Aug 2024</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--green)">🌎 LATAM + APAC</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <table class="tbl">
+          <tr><th>Exchange</th><th>Country</th><th>Risk</th></tr>
+          <tr><td>Mercado Bitcoin</td><td style="color:var(--muted2)">Brazil</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Bitso</td><td style="color:var(--muted2)">Mexico</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Ripio</td><td style="color:var(--muted2)">Argentina</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Independent Reserve</td><td style="color:var(--muted2)">Australia</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Upbit</td><td style="color:var(--muted2)">Korea</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Bithumb</td><td style="color:var(--muted2)">Korea</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+          <tr><td>Korbit</td><td style="color:var(--muted2)">Korea</td><td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid var(--green);color:var(--green)">low</span></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span class="pt" style="color:var(--red)">💀 BANKRUPT / DEFUNCT</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <table class="tbl">
+          <tr><th>Exchange</th><th>Year</th><th>Reason</th></tr>
+          <tr><td style="color:var(--red)">FTX</td><td style="color:var(--muted2)">2022</td><td style="color:var(--red);font-size:8px">Fraud · SBF convicted</td></tr>
+          <tr><td style="color:var(--red)">Celsius</td><td style="color:var(--muted2)">2022</td><td style="color:var(--amber);font-size:8px">Insolvency · Mashinsky</td></tr>
+          <tr><td style="color:var(--amber)">BlockFi</td><td style="color:var(--muted2)">2022</td><td style="color:var(--amber);font-size:8px">FTX exposure</td></tr>
+          <tr><td style="color:var(--amber)">Voyager</td><td style="color:var(--muted2)">2022</td><td style="color:var(--amber);font-size:8px">3AC exposure</td></tr>
+          <tr><td style="color:var(--amber)">Bittrex</td><td style="color:var(--muted2)">2023</td><td style="color:var(--amber);font-size:8px">SEC charges</td></tr>
+          <tr><td style="color:var(--red)">Mt. Gox</td><td style="color:var(--muted2)">2014</td><td style="color:var(--red);font-size:8px">850K BTC hack</td></tr>
+        </table>
+        <div style="margin-top:8px;padding:6px;background:rgba(255,59,92,.08);border:1px solid rgba(255,59,92,.2);font-family:var(--mono);font-size:8px;color:var(--red)">
+          All wallets kept for forensic tracing
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════ CEX REGISTRY v2 ══════════════════════ -->
+<div class="page" id="page-cexv2">
+
+  <div class="stats-grid sg-4" style="margin-bottom:14px">
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Exchanges Registered</div><div class="stat-val">20</div><div class="stat-sub">CoinGecko top 10 + 10 major</div></div>
+    <div class="stat" style="--ac:var(--green)"><div class="stat-lbl">Regulated</div><div class="stat-val" style="color:var(--green)">9</div><div class="stat-sub">US, EU, KR, Brazil</div></div>
+    <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">Wallets Labeled</div><div class="stat-val">19</div><div class="stat-sub">4-layer confidence</div></div>
+    <div class="stat" style="--ac:var(--purple)"><div class="stat-lbl">MiCA Compliant</div><div class="stat-val">6</div><div class="stat-sub">EU ready 2026</div></div>
+  </div>
+
+  <!-- WALLET LOOKUP -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph">
+      <span class="pt">🔍 CEX WALLET LOOKUP — 4-LAYER INTELLIGENCE</span>
+      <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">entity · role · confidence · evidence</span>
+    </div>
+    <div class="pb">
+      <div class="row" style="margin-bottom:8px">
+        <input class="inp" id="cexv2Addr" placeholder="Enter Ethereum address to get: exchange name, wallet role, confidence score, attribution method..." onkeydown="if(event.key==='Enter')cexv2Lookup()"/>
+        <button class="btn" onclick="cexv2Lookup()">SCREEN</button>
+      </div>
+      <div class="qrow" style="margin-bottom:10px">
+        <button class="qb" onclick="cexv2Set('0xbe0eb53f46cd790cd13851d5eff43d12404d33e8')">Binance Cold</button>
+        <button class="qb" onclick="cexv2Set('0xf977814e90da44bfa03b6295a0616a897441acec')">Binance Hot</button>
+        <button class="qb" onclick="cexv2Set('0x503828976d22510aad0201ac7ec88293211d23da')">Coinbase Hot</button>
+        <button class="qb" onclick="cexv2Set('0xa090e606e30bd747d4e6245a1517ebe430f0057e')">Coinbase Cold</button>
+        <button class="qb" onclick="cexv2Set('0x6fc82a5fe25a5cdb58bc74600a40a69c065263f8')">Gemini Cold</button>
+        <button class="qb" onclick="cexv2Set('0xe853c56864a2ebe4576a807d26fdc4a0ada51919')">Kraken Cold</button>
+      </div>
+      <div id="cexv2Result" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- REGISTRY TABLE -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph">
+      <span class="pt"><div class="pulse-dot"></div>CEX REGISTRY — 20 EXCHANGES</span>
+      <div style="display:flex;gap:6px">
+        <input class="inp" id="cexv2Filter" placeholder="Filter..." style="width:120px;padding:3px 8px;font-size:9px" oninput="cexv2Filter()"/>
+        <select id="cexv2RegFilter" onchange="cexv2Filter()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--muted2);font-family:var(--mono);font-size:9px;padding:3px 6px">
+          <option value="">All</option>
+          <option value="regulated">Regulated</option>
+          <option value="mixed">Mixed/Offshore</option>
+        </select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;max-height:380px;overflow-y:auto">
+      <table class="tbl" id="cexv2Table">
+        <thead><tr>
+          <th>#</th><th>Exchange</th><th>Tier</th><th>Jurisdiction</th>
+          <th>Regulatory</th><th>AML Risk</th><th>Enforcement</th>
+          <th>POR</th><th>MiCA</th><th>Wallets</th><th>Avg Conf</th>
+        </tr></thead>
+        <tbody id="cexv2Body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- BOTTOM: Role types + Evidence types -->
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><span class="pt">18 WALLET ROLES</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div style="display:flex;flex-wrap:wrap;gap:3px">
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">exchange_hot_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--blue);color:var(--blue)">exchange_cold_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green)">exchange_deposit_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_withdrawal_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_internal_routing_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">exchange_treasury_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_settlement_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_fee_collection_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_liquidity_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--purple);color:var(--purple)">exchange_market_making_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_otc_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_margin_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_derivatives_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_gas_funding_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_reserve_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_sweeper_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">exchange_operational_wallet</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--muted2);color:var(--muted2)">exchange_unknown_role</span>
+        </div>
+        <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-bottom:6px;letter-spacing:1px">16 WALLET SUBROLES</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">user_deposit_address</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">omnibus_deposit</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">stablecoin_settlement</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">eth_reserve</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">sweep_target</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">sweep_source</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">withdrawal_buffer</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">maker_inventory</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">otc_inventory</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">vip_client_flow</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green)">proof_of_reserves_published</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--red);color:var(--red)">bankruptcy_estate_tagged</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><span class="pt">8 ATTRIBUTION METHODS</span></div>
+      <div class="pb" style="padding:10px 14px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green);width:130px;text-align:center">official_disclosure</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Exchange published their own wallet — highest trust</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green);width:130px;text-align:center">manual_verified</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Analyst confirmed via multiple sources</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan);width:130px;text-align:center">etherscan_tag</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Etherscan public label cloud confirmed</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan);width:130px;text-align:center">osint</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Open source intelligence — public blockchain data</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber);width:130px;text-align:center">heuristics</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Flow pattern: fan-in/out, sweep detection</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber);width:130px;text-align:center">graph_cluster_inference</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Neo4j graph traversal linked to known wallet</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03)">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--purple);color:var(--purple);width:130px;text-align:center">model_predicted</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">ML model prediction — review queue</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 0">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2);width:130px;text-align:center">imported_external_label</span>
+            <span style="font-family:var(--mono);font-size:9px;color:var(--muted2)">Imported from external intelligence feed</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)">
+          <div style="font-family:var(--mono);font-size:8px;color:var(--muted2);margin-bottom:8px;letter-spacing:1px">9 EVIDENCE TYPES</div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px">
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--green);color:var(--green)">official_disclosure</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">etherscan_tag</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--cyan);color:var(--cyan)">osint</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">flow_pattern</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">sweep_pattern</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--amber);color:var(--amber)">shared_counterparty</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--purple);color:var(--purple)">internal_reuse</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--purple);color:var(--purple)">model_output</span>
+            <span style="font-family:var(--mono);font-size:7px;padding:1px 6px;border:1px solid var(--bdr2);color:var(--muted2)">analyst_review</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ CEX DETECTION ENGINE TAB ══════════════ -->
+<div class="page" id="page-detection">
+
+  <!-- Header stats -->
+  <div class="stats-grid sg-4" style="margin-bottom:14px">
+    <div class="stat" style="--ac:var(--cyan)">
+      <div class="stat-lbl">Scored Wallets</div>
+      <div class="stat-val" id="det-scored">—</div>
+      <div class="stat-sub">behavioral features</div>
+    </div>
+    <div class="stat" style="--ac:var(--green)">
+      <div class="stat-lbl">High Confidence</div>
+      <div class="stat-val" id="det-highconf" style="color:var(--green)">—</div>
+      <div class="stat-sub">score ≥ 0.90</div>
+    </div>
+    <div class="stat" style="--ac:var(--amber)">
+      <div class="stat-lbl">Exchange Labels</div>
+      <div class="stat-val" id="det-labels">—</div>
+      <div class="stat-sub">hot/cold/deposit</div>
+    </div>
+    <div class="stat" style="--ac:var(--purple)">
+      <div class="stat-lbl">Transfers w/ USD</div>
+      <div class="stat-val" id="det-usd">—</div>
+      <div class="stat-sub">price-valued</div>
+    </div>
+  </div>
+
+  <!-- Address screener -->
+  <div class="panel" style="margin-bottom:14px">
+    <div class="ph"><span class="pt">🔍 CEX DETECTION SCREEN</span></div>
+    <div class="pb">
+      <div class="row" style="margin-bottom:8px">
+        <input class="inp" id="detAddr" placeholder="Enter address to screen against CEX detection engine..."
+          onkeydown="if(event.key==='Enter')detScreen()"/>
+        <button class="btn" onclick="detScreen()">SCREEN</button>
+      </div>
+      <div class="qrow" style="margin-bottom:10px">
+        <button class="qb" onclick="detSet('0xa9d1e08c7793af67e9d92fe308d5697fb81d3e43')">$1.3B Hot</button>
+        <button class="qb" onclick="detSet('0x28c6c06298d514db089934071355e5743bf21d60')">Binance Hot</button>
+        <button class="qb" onclick="detSet('0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640')">Uniswap V3</button>
+        <button class="qb" onclick="detSet('0xbbbbbbbbbb9cc5e90e3b3af64bdaf62c37eeffcb')">Morpho $16B</button>
+      </div>
+      <div id="detResult" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- Top candidates + Exchange lookup -->
+  <div class="g2" style="margin-bottom:14px">
+
+    <!-- Top hot wallets -->
+    <div class="panel">
+      <div class="ph">
+        <span class="pt"><div class="pulse-dot"></div>TOP HOT WALLET CANDIDATES</span>
+        <div style="display:flex;gap:6px">
+          <button class="qb active" onclick="detLoadRole('hot',this)">HOT</button>
+          <button class="qb" onclick="detLoadRole('deposit',this)">DEPOSIT</button>
+          <button class="qb" onclick="detLoadRole('cold',this)">COLD</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;max-height:320px">
+        <table class="tbl" id="detCandTable">
+          <thead><tr>
+            <th>ADDRESS</th><th>SCORE</th><th>USD 30D</th><th>SENDERS</th><th>KNOWN</th>
+          </tr></thead>
+          <tbody id="detCandBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Exchange lookup -->
+    <div class="panel">
+      <div class="ph"><span class="pt">EXCHANGE INTELLIGENCE</span></div>
+      <div class="pb">
+        <div class="row" style="margin-bottom:10px">
+          <input class="inp" id="detExchName" placeholder="Exchange name (Binance, Coinbase, Kraken...)"
+            onkeydown="if(event.key==='Enter')detLoadExchange()"/>
+          <button class="btn" onclick="detLoadExchange()">LOOKUP</button>
+        </div>
+        <div class="qrow" style="margin-bottom:10px">
+          <button class="qb" onclick="detExchSet('Binance')">Binance</button>
+          <button class="qb" onclick="detExchSet('Coinbase')">Coinbase</button>
+          <button class="qb" onclick="detExchSet('Kraken')">Kraken</button>
+          <button class="qb" onclick="detExchSet('OKX')">OKX</button>
+        </div>
+        <div id="detExchResult" style="overflow-y:auto;max-height:220px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Candidates full table -->
+  <div class="panel">
+    <div class="ph">
+      <span class="pt">ALL HIGH-CONFIDENCE CANDIDATES (score ≥ 0.90)</span>
+      <button class="btn btn-secondary" style="font-size:9px;padding:3px 8px" onclick="detLoadCandidates()">↻ REFRESH</button>
+    </div>
+    <div style="overflow-x:auto;max-height:300px;overflow-y:auto">
+      <table class="tbl" id="detAllTable">
+        <thead><tr>
+          <th>#</th><th>ADDRESS</th><th>BEST ROLE</th><th>SCORE</th>
+          <th>DEPOSIT</th><th>HOT</th><th>OUTBOUND USD</th>
+          <th>SENDERS</th><th>RECEIVERS</th><th>EXCHANGE</th>
+        </tr></thead>
+        <tbody id="detAllBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 </div><!-- /wrap -->
 
 <script>
@@ -698,6 +1447,9 @@ function goPage(name,el){
   document.getElementById('page-'+name).classList.add('active');
   el.classList.add('active');
   if(name==='screen')renderScreenDist();
+  if(name==='exchanges')renderExchangeTable(exchangeData);
+  if(name==='cexv2')renderCexV2Table(cexV2Data);
+  if(name==='detection'){detLoadStats();detLoadRole('hot',null);detLoadCandidates();}
   if(name==='alerts')loadAlertsFull();
 }
 
@@ -1080,14 +1832,36 @@ async function testWebhook(){
 function setRate(){
   const v=parseInt(document.getElementById('refreshSel').value);
   if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null;}
-  if(v>0){refreshTimer=setInterval(()=>{loadStats();loadStream();loadAlerts();},v);}
+  if(v>0){refreshTimer=setInterval(()=>{loadStats();loadStream();loadAlerts();loadInflows();},v);}
 }
 
 // START LIVE
 function startLive(){
-  loadStats();loadAlerts();loadStream();
+  loadStats();loadAlerts();loadStream();loadInflows();
   setRate();
 }
+
+async function loadInflows(){
+  if(!TOKEN)return;
+  try{
+    const r=await fetch(`${API}/v1/inflows`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    const ti=document.getElementById('totalInflow');
+    if(ti)ti.textContent=d.total_label;
+    (d.tokens||[]).forEach(t=>{
+      const sym=t.symbol.toLowerCase();
+      const val=document.getElementById('inf-'+sym);
+      const tx=document.getElementById('inf-'+sym+'-tx');
+      if(val){
+        const old=val.textContent;
+        val.textContent=t.usd_label;
+        if(old!==t.usd_label&&old!=='—'){val.style.textShadow='0 0 12px currentColor';setTimeout(()=>val.style.textShadow='',800);}
+      }
+      if(tx)tx.textContent=t.transfers.toLocaleString()+' transfers';
+    });
+  }catch(e){}
+}
+
 
 // CHECK API
 async function checkAPI(){
@@ -1097,8 +1871,430 @@ async function checkAPI(){
   }catch(e){}
 }
 
+
+// EXCHANGE DATA
+const exchangeData = [
+  {name:'Binance',tier:'tier_1',status:'active',cat:'hybrid',country:'Cayman Islands',reg:'offshore',risk:'medium',wallets:10,conf:0.9670,por:true,mica:false},
+  {name:'Coinbase',tier:'tier_1',status:'active',cat:'hybrid',country:'United States',reg:'regulated',risk:'low',wallets:9,conf:0.9722,por:false,mica:true},
+  {name:'OKX',tier:'tier_1',status:'active',cat:'hybrid',country:'Seychelles',reg:'offshore',risk:'medium',wallets:4,conf:0.9650,por:true,mica:false},
+  {name:'Bybit',tier:'tier_1',status:'active',cat:'hybrid',country:'UAE',reg:'offshore',risk:'medium',wallets:3,conf:0.9600,por:true,mica:false},
+  {name:'Kraken',tier:'tier_1',status:'active',cat:'hybrid',country:'United States',reg:'regulated',risk:'low',wallets:6,conf:0.9650,por:false,mica:true},
+  {name:'KuCoin',tier:'tier_1',status:'active',cat:'hybrid',country:'Seychelles',reg:'offshore',risk:'high',wallets:4,conf:0.9525,por:true,mica:false},
+  {name:'Bitfinex',tier:'tier_1',status:'active',cat:'hybrid',country:'BVI',reg:'offshore',risk:'high',wallets:4,conf:0.9650,por:false,mica:false},
+  {name:'HTX',tier:'tier_1',status:'active',cat:'hybrid',country:'Seychelles',reg:'offshore',risk:'medium',wallets:4,conf:0.9550,por:false,mica:false},
+  {name:'Gate.io',tier:'tier_1',status:'active',cat:'hybrid',country:'Cayman Islands',reg:'offshore',risk:'medium',wallets:2,conf:0.9550,por:true,mica:false},
+  {name:'Bitget',tier:'tier_1',status:'active',cat:'hybrid',country:'Seychelles',reg:'offshore',risk:'medium',wallets:0,conf:0,por:true,mica:false},
+  {name:'Crypto.com',tier:'tier_1',status:'active',cat:'hybrid',country:'Singapore',reg:'regulated',risk:'low',wallets:3,conf:0.9600,por:true,mica:true},
+  {name:'Upbit',tier:'tier_1',status:'active',cat:'spot',country:'South Korea',reg:'regulated',risk:'low',wallets:1,conf:0.9400,por:false,mica:false},
+  {name:'Gemini',tier:'tier_1',status:'active',cat:'hybrid',country:'United States',reg:'regulated',risk:'low',wallets:2,conf:0.9850,por:false,mica:true},
+  {name:'Bitstamp',tier:'tier_1',status:'active',cat:'spot',country:'Luxembourg',reg:'regulated',risk:'low',wallets:3,conf:0.9600,por:false,mica:true},
+  {name:'MEXC',tier:'tier_1',status:'active',cat:'hybrid',country:'Seychelles',reg:'offshore',risk:'high',wallets:2,conf:0.9350,por:false,mica:false},
+  {name:'Deribit',tier:'tier_2',status:'active',cat:'derivatives',country:'Panama',reg:'offshore',risk:'medium',wallets:0,conf:0,por:false,mica:false},
+  {name:'WhiteBIT',tier:'tier_2',status:'active',cat:'hybrid',country:'Lithuania',reg:'regulated',risk:'low',wallets:0,conf:0,por:true,mica:true},
+  {name:'Bitvavo',tier:'tier_2',status:'active',cat:'spot',country:'Netherlands',reg:'regulated',risk:'low',wallets:1,conf:0.9200,por:false,mica:true},
+  {name:'Bitpanda',tier:'tier_2',status:'active',cat:'broker',country:'Austria',reg:'regulated',risk:'low',wallets:0,conf:0,por:false,mica:true},
+  {name:'CEX.IO',tier:'tier_2',status:'active',cat:'hybrid',country:'UK',reg:'regulated',risk:'low',wallets:0,conf:0,por:false,mica:true},
+  {name:'Poloniex',tier:'tier_2',status:'active',cat:'hybrid',country:'Seychelles',reg:'offshore',risk:'high',wallets:2,conf:0.9250,por:false,mica:false},
+  {name:'CoinDCX',tier:'tier_2',status:'active',cat:'hybrid',country:'India',reg:'regulated',risk:'low',wallets:0,conf:0,por:false,mica:false},
+  {name:'WazirX',tier:'tier_2',status:'active',cat:'spot',country:'India',reg:'regulated',risk:'medium',wallets:0,conf:0,por:false,mica:false},
+  {name:'FTX',tier:'tier_1',status:'bankrupt',cat:'hybrid',country:'Bahamas',reg:'offshore',risk:'critical',wallets:3,conf:0.9833,por:false,mica:false},
+  {name:'Celsius',tier:'tier_2',status:'bankrupt',cat:'custody',country:'United States',reg:'regulated',risk:'critical',wallets:2,conf:0.9850,por:false,mica:false},
+  {name:'Mt. Gox',tier:'tier_1',status:'defunct',cat:'spot',country:'Japan',reg:'regulated',risk:'critical',wallets:0,conf:0,por:false,mica:false},
+];
+
+function exSet(a){document.getElementById('exAddr').value=a;lookupExchange();}
+
+async function lookupExchange(){
+  const addr=document.getElementById('exAddr').value.trim();if(!addr||!TOKEN)return;
+  const el=document.getElementById('exResult');
+  el.style.display='block';
+  el.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--cyan)">Looking up exchange intelligence...</div>';
+  try{
+    const r=await fetch(`${API}/v1/address/${addr}`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    const risk=d.risk||{};
+    const col=scCol(risk.risk_score||0);
+    const isExchange=d.category==='exchange'||d.label?.toLowerCase().includes('wallet')||d.label?.toLowerCase().includes('binance')||d.label?.toLowerCase().includes('coinbase');
+    el.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">ENTITY NAME</div>
+          <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--cyan)">${d.label||'Unknown'}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">ENTITY TYPE</div>
+          <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--cyan)">${d.category||'unknown'}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">WALLET ROLE</div>
+          <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber)">${d.sub_category||'—'}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">CONFIDENCE</div>
+          <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:${col}">${d.confidence||0}%</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--bg);border:1px solid var(--bdr)">
+        <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:${col}">${risk.risk_score||0}</span>
+        <div><span class="b b${risk.risk_level||'UNKNOWN'}">${risk.risk_level||'—'}</span></div>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted2);flex:1">${addr.slice(0,14)}...${addr.slice(-8)}</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 12px;border:2px solid ${col};color:${col}">${risk.recommendation||'—'}</span>
+      </div>`;
+  }catch(e){el.innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--red)">Error: ${e.message}</div>`;}
+}
+
+function renderExchangeTable(data){
+  const riskCol={low:'var(--green)',medium:'var(--amber)',high:'var(--red)',critical:'var(--red)'};
+  const tierCol={tier_1:'var(--cyan)',tier_2:'var(--blue)',tier_3:'var(--muted2)'};
+  document.getElementById('exBody').innerHTML=data.map(e=>`
+    <tr>
+      <td style="font-weight:700">${e.name}</td>
+      <td style="color:${tierCol[e.tier]||'var(--muted2)'}">${e.tier}</td>
+      <td style="color:${e.status==='active'?'var(--green)':e.status==='bankrupt'?'var(--red)':'var(--muted2)'}">${e.status}</td>
+      <td style="color:var(--muted2)">${e.cat}</td>
+      <td style="color:var(--muted2);font-size:8px">${e.country}</td>
+      <td style="color:${e.reg==='regulated'?'var(--green)':'var(--amber)'}">${e.reg}</td>
+      <td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid ${riskCol[e.risk]||'var(--muted2)'};color:${riskCol[e.risk]||'var(--muted2)'}">${e.risk}</span></td>
+      <td style="color:${e.wallets>0?'var(--cyan)':'var(--muted2)'}">${e.wallets}</td>
+      <td style="color:${e.conf>=0.95?'var(--green)':e.conf>=0.90?'var(--cyan)':e.conf>0?'var(--amber)':'var(--muted2)'}">${e.conf>0?e.conf.toFixed(4):'—'}</td>
+      <td style="color:${e.por?'var(--green)':'var(--muted2)'}">${e.por?'✓':'—'}</td>
+      <td style="color:${e.mica?'var(--green)':'var(--muted2)'}">${e.mica?'✓':'—'}</td>
+    </tr>`).join('');
+}
+
+function filterExchanges(){
+  const q=document.getElementById('exFilter').value.toLowerCase();
+  const tier=document.getElementById('exTierFilter').value;
+  const risk=document.getElementById('exRiskFilter').value;
+  let filtered=exchangeData;
+  if(q)filtered=filtered.filter(e=>e.name.toLowerCase().includes(q)||e.country.toLowerCase().includes(q));
+  if(tier)filtered=filtered.filter(e=>e.tier===tier);
+  if(risk)filtered=filtered.filter(e=>e.risk===risk);
+  renderExchangeTable(filtered);
+}
+
+// Init exchange table
+renderExchangeTable(exchangeData);
+
+
+const cexV2Data = [
+  {n:1,name:'Binance',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:true,por:true,mica:false,wallets:4,conf:0.9850},
+  {n:2,name:'Bybit',tier:'tier_1',juris:'UAE',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9650},
+  {n:3,name:'MEXC',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:4,name:'Gate',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
+  {n:5,name:'Crypto.com',tier:'tier_1',juris:'Singapore',reg:'mixed',aml:'medium',enf:false,por:true,mica:true,wallets:0,conf:0},
+  {n:6,name:'Bitget',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
+  {n:7,name:'OKX',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9700},
+  {n:8,name:'Coinbase',tier:'tier_1',juris:'United States',reg:'regulated',aml:'medium',enf:false,por:false,mica:true,wallets:3,conf:0.9800},
+  {n:9,name:'HTX',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:false,mica:false,wallets:2,conf:0.9650},
+  {n:10,name:'Upbit',tier:'tier_1',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:11,name:'Kraken',tier:'tier_1',juris:'United States',reg:'regulated',aml:'medium',enf:true,por:false,mica:true,wallets:2,conf:0.9800},
+  {n:12,name:'KuCoin',tier:'tier_2',juris:'Seychelles',reg:'mixed',aml:'high',enf:true,por:false,mica:false,wallets:0,conf:0},
+  {n:13,name:'Bitfinex',tier:'tier_2',juris:'BVI',reg:'mixed',aml:'medium',enf:true,por:false,mica:false,wallets:2,conf:0.9750},
+  {n:14,name:'Gemini',tier:'tier_2',juris:'United States',reg:'regulated',aml:'medium',enf:true,por:false,mica:true,wallets:2,conf:0.9850},
+  {n:15,name:'Bitstamp',tier:'tier_2',juris:'United Kingdom',reg:'regulated',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
+  {n:16,name:'Bithumb',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:17,name:'Coinone',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:18,name:'Korbit',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:19,name:'CEX.IO',tier:'tier_2',juris:'United Kingdom',reg:'mixed',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
+  {n:20,name:'Mercado Bitcoin',tier:'tier_2',juris:'Brazil',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+];
+
+function cexv2Set(a){document.getElementById('cexv2Addr').value=a;cexv2Lookup();}
+
+async function cexv2Lookup(){
+  const addr=document.getElementById('cexv2Addr').value.trim();if(!addr||!TOKEN)return;
+  const el=document.getElementById('cexv2Result');
+  el.style.display='block';
+  el.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--cyan)">Looking up CEX registry...</div>';
+  try{
+    const r=await fetch(`${API}/v1/address/${addr}`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    const risk=d.risk||{};
+    const col=scCol(risk.risk_score||0);
+    const isExch=d.category==='exchange';
+    el.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:8px">
+        <div style="background:var(--bg);border:1px solid ${isExch?'var(--green)':'var(--bdr)'};padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">ENTITY NAME</div>
+          <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:${isExch?'var(--green)':'var(--cyan)'}">${d.label||'Unknown'}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">ENTITY TYPE</div>
+          <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--cyan)">${d.category||'unknown'}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">WALLET ROLE</div>
+          <div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--amber)">${d.sub_category||'—'}</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">CONFIDENCE</div>
+          <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--green)">${d.confidence||0}%</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid ${col};padding:10px">
+          <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">RISK SCORE</div>
+          <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${col}">${risk.risk_score||0}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border:1px solid var(--bdr)">
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted2);flex:1">${addr}</span>
+        <span class="b b${risk.risk_level||'UNKNOWN'}">${risk.risk_level||'—'}</span>
+        <span style="font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 12px;border:2px solid ${col};color:${col}">${risk.recommendation||'—'}</span>
+      </div>`;
+  }catch(e){el.innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--red)">Error: ${e.message}</div>`;}
+}
+
+function renderCexV2Table(data){
+  const rc={regulated:'var(--green)',mixed:'var(--amber)',offshore:'var(--red)'};
+  const ac={medium:'var(--amber)',high:'var(--red)',low:'var(--green)',critical:'var(--red)'};
+  const tc={tier_1:'var(--cyan)',tier_2:'var(--blue)',tier_3:'var(--muted2)'};
+  document.getElementById('cexv2Body').innerHTML=data.map(e=>`
+    <tr>
+      <td style="color:var(--muted2)">${e.n}</td>
+      <td style="font-weight:700">${e.name}</td>
+      <td style="color:${tc[e.tier]||'var(--muted2)'}">${e.tier}</td>
+      <td style="color:var(--muted2);font-size:8px">${e.juris}</td>
+      <td style="color:${rc[e.reg]||'var(--muted2)'}">${e.reg}</td>
+      <td><span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid ${ac[e.aml]};color:${ac[e.aml]}">${e.aml}</span></td>
+      <td style="color:${e.enf?'var(--amber)':'var(--green)'};text-align:center">${e.enf?'⚠':'✓'}</td>
+      <td style="color:${e.por?'var(--green)':'var(--muted2)'};text-align:center">${e.por?'✓':'—'}</td>
+      <td style="color:${e.mica?'var(--green)':'var(--muted2)'};text-align:center">${e.mica?'✓':'—'}</td>
+      <td style="color:${e.wallets>0?'var(--cyan)':'var(--muted2)'}">${e.wallets}</td>
+      <td style="color:${e.conf>=0.97?'var(--green)':e.conf>=0.90?'var(--cyan)':e.conf>0?'var(--amber)':'var(--muted2)'}">${e.conf>0?e.conf.toFixed(4):'—'}</td>
+    </tr>`).join('');
+}
+
+function cexv2Filter(){
+  const q=document.getElementById('cexv2Filter').value.toLowerCase();
+  const reg=document.getElementById('cexv2RegFilter').value;
+  let d=cexV2Data;
+  if(q)d=d.filter(e=>e.name.toLowerCase().includes(q)||e.juris.toLowerCase().includes(q));
+  if(reg)d=d.filter(e=>e.reg===reg);
+  renderCexV2Table(d);
+}
+
+renderCexV2Table(cexV2Data);
+
+
+const CEX_API = 'http://localhost:8084';
+
+function detSet(a){document.getElementById('detAddr').value=a;detScreen();}
+function detExchSet(n){document.getElementById('detExchName').value=n;detLoadExchange();}
+
+function fmtUSD(n){
+  if(!n||n===0)return '—';
+  if(n>=1e9)return '$'+(n/1e9).toFixed(1)+'B';
+  if(n>=1e6)return '$'+(n/1e6).toFixed(1)+'M';
+  if(n>=1e3)return '$'+(n/1e3).toFixed(0)+'K';
+  return '$'+n.toFixed(0);
+}
+
+async function detLoadStats(){
+  try{
+    const d=await fetch(CEX_API+'/v1/cex/stats').then(r=>r.json());
+    document.getElementById('det-scored').textContent=fmt(d.scored_wallets);
+    document.getElementById('det-highconf').textContent=fmt(d.high_confidence_candidates);
+    document.getElementById('det-labels').textContent=fmt(d.labeled_exchange_wallets);
+    document.getElementById('det-usd').textContent=fmt(d.transfers_with_usd);
+  }catch(e){console.log('det stats:',e);}
+}
+
+async function detScreen(){
+  const addr=document.getElementById('detAddr').value.trim();
+  if(!addr)return;
+  const el=document.getElementById('detResult');
+  el.style.display='block';
+  el.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--cyan)">Screening...</div>';
+  try{
+    const d=await fetch(CEX_API+'/v1/cex/screen/'+addr).then(r=>r.json());
+    const c=d.candidate_scores;
+    const isKnown=d.is_exchange_wallet;
+    const borderCol=isKnown?'var(--green)':c&&c.best_candidate_score>=0.90?'var(--amber)':'var(--bdr)';
+
+    el.innerHTML=`
+      <div style="border:1px solid ${borderCol};padding:12px;background:var(--bg);margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">STATUS</div>
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:${isKnown?'var(--green)':'var(--amber)'}">
+              ${isKnown?'✓ KNOWN EXCHANGE':'⚡ CANDIDATE'}
+            </div>
+          </div>
+          ${isKnown?`
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">EXCHANGE</div>
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--cyan)">${d.exchange}</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">ROLE</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--amber)">${d.wallet_role||'—'}</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">CONFIDENCE</div>
+            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--green)">${((d.confidence||0)*100).toFixed(0)}%</div>
+          </div>`:''}
+          ${c?`
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">BEST ROLE</div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--amber)">${c.best_candidate_role}</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">SCORE</div>
+            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--cyan)">${c.best_candidate_score}</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">OUTBOUND USD</div>
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--green)">${fmtUSD(c.outbound_usd_30d)}</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:2px">SENDERS</div>
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700">${fmt(c.unique_senders_30d)}</div>
+          </div>`:''}
+        </div>
+        ${c?`<div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="flex:1;background:var(--surface);padding:6px;text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">DEPOSIT SCORE</div>
+            <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${c.deposit_score>=0.75?'var(--green)':c.deposit_score>=0.5?'var(--amber)':'var(--muted2)'}">${c.deposit_score}</div>
+          </div>
+          <div style="flex:1;background:var(--surface);padding:6px;text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">HOT SCORE</div>
+            <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${c.hot_score>=0.75?'var(--cyan)':c.hot_score>=0.5?'var(--amber)':'var(--muted2)'}">${c.hot_score}</div>
+          </div>
+          <div style="flex:1;background:var(--surface);padding:6px;text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">COLD SCORE</div>
+            <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${c.cold_score>=0.75?'var(--blue)':c.cold_score>=0.5?'var(--amber)':'var(--muted2)'}">${c.cold_score}</div>
+          </div>
+          <div style="flex:1;background:var(--surface);padding:6px;text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">RECEIVERS</div>
+            <div style="font-family:var(--mono);font-size:13px;font-weight:700">${fmt(c.unique_receivers_30d)}</div>
+          </div>
+        </div>`:''}
+        ${d.risk_signals&&d.risk_signals.length?`
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${d.risk_signals.map(s=>`<span style="font-family:var(--mono);font-size:8px;padding:2px 8px;border:1px solid var(--amber);color:var(--amber)">${s}</span>`).join('')}
+        </div>`:''}
+      </div>`;
+  }catch(e){el.innerHTML=`<div style="color:var(--red);font-family:var(--mono);font-size:10px">Error: ${e.message}</div>`;}
+}
+
+async function detLoadRole(role, btn){
+  document.querySelectorAll('#page-detection .qb').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  try{
+    const d=await fetch(CEX_API+'/v1/cex/top/'+role+'?limit=20').then(r=>r.json());
+    const rc={deposit:'var(--green)',hot:'var(--cyan)',cold:'var(--blue)'}[role]||'var(--cyan)';
+    document.getElementById('detCandBody').innerHTML=(d.results||[]).map((r,i)=>`
+      <tr onclick="detSet('${r.address}')" style="cursor:pointer">
+        <td style="font-family:var(--mono);font-size:9px;color:var(--muted2)">${r.address.slice(0,10)}...${r.address.slice(-6)}</td>
+        <td style="color:${rc};font-weight:700">${r.score}</td>
+        <td style="color:var(--green)">${fmtUSD(r.usd_value_30d)}</td>
+        <td>${fmt(r.unique_senders_30d)}</td>
+        <td style="font-size:9px">${r.known_exchange}</td>
+      </tr>`).join('');
+  }catch(e){console.log('detLoadRole:',e);}
+}
+
+async function detLoadExchange(){
+  const name=document.getElementById('detExchName').value.trim();
+  if(!name)return;
+  const el=document.getElementById('detExchResult');
+  el.innerHTML='<div style="font-family:var(--mono);font-size:9px;color:var(--cyan)">Loading...</div>';
+  try{
+    const d=await fetch(CEX_API+'/v1/cex/exchange/'+encodeURIComponent(name)).then(r=>r.json());
+    if(d.error){el.innerHTML=`<div style="color:var(--red);font-family:var(--mono);font-size:9px">${d.error}</div>`;return;}
+    const rc={regulated:'var(--green)',mixed:'var(--amber)',offshore:'var(--red)',unknown:'var(--muted2)'}[d.regulatory_status]||'var(--muted2)';
+    el.innerHTML=`
+      <div style="margin-bottom:8px;padding:8px;background:var(--bg);border:1px solid var(--bdr)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--cyan)">${d.canonical_name}</span>
+          <span style="font-family:var(--mono);font-size:8px;padding:2px 8px;border:1px solid ${rc};color:${rc}">${d.regulatory_status}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
+          <div style="text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">TIER</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--cyan)">${d.trust_tier}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">WALLETS</div>
+            <div style="font-family:var(--mono);font-size:10px;font-weight:700">${d.labeled_wallets}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">AVG CONF</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--green)">${(d.avg_confidence*100).toFixed(0)}%</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-family:var(--mono);font-size:7px;color:var(--muted2)">POR</div>
+            <div style="font-family:var(--mono);font-size:10px;color:${d.proof_of_reserves?'var(--green)':'var(--muted2)'}">${d.proof_of_reserves?'✓':'—'}</div>
+          </div>
+        </div>
+      </div>
+      ${(d.wallets||[]).map(w=>`
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer"
+          onclick="detSet('${w.address}')">
+          <span style="font-family:var(--mono);font-size:8px;color:var(--muted2);flex:1">${w.address.slice(0,12)}...${w.address.slice(-6)}</span>
+          <span style="font-family:var(--mono);font-size:7px;padding:1px 5px;border:1px solid ${w.wallet_role.includes('cold')?'var(--blue)':'var(--cyan)'};color:${w.wallet_role.includes('cold')?'var(--blue)':'var(--cyan)'}">${w.wallet_role.replace('exchange_','')}</span>
+          <span style="font-family:var(--mono);font-size:8px;color:var(--green)">${(w.confidence_score*100).toFixed(0)}%</span>
+          ${w.outbound_usd_30d>0?`<span style="font-family:var(--mono);font-size:8px;color:var(--amber)">${fmtUSD(w.outbound_usd_30d)}</span>`:''}
+        </div>`).join('')}`;
+  }catch(e){el.innerHTML=`<div style="color:var(--red);font-family:var(--mono);font-size:9px">Error: ${e.message}</div>`;}
+}
+
+async function detLoadCandidates(){
+  try{
+    const d=await fetch(CEX_API+'/v1/cex/candidates?limit=100&min_score=0.90').then(r=>r.json());
+    document.getElementById('detAllBody').innerHTML=(d.candidates||[]).map((c,i)=>`
+      <tr onclick="detSet('${c.address}')" style="cursor:pointer">
+        <td style="color:var(--muted2)">${i+1}</td>
+        <td style="font-family:var(--mono);font-size:9px">${c.address.slice(0,10)}...${c.address.slice(-6)}</td>
+        <td style="font-size:8px;color:var(--amber)">${c.best_candidate_role.replace('exchange_','')}</td>
+        <td style="font-weight:700;color:var(--cyan)">${c.best_candidate_score}</td>
+        <td style="color:var(--green)">${c.deposit_score}</td>
+        <td style="color:var(--cyan)">${c.hot_score}</td>
+        <td style="color:var(--amber)">${fmtUSD(c.outbound_usd_30d)}</td>
+        <td>${fmt(c.unique_senders_30d)}</td>
+        <td>${fmt(c.unique_receivers_30d)}</td>
+        <td style="font-size:8px;color:${c.known_exchange?'var(--cyan)':'var(--muted2)'}">${c.known_exchange||'—'}</td>
+      </tr>`).join('');
+  }catch(e){console.log('detLoadCandidates:',e);}
+}
+
+// Load on tab switch
+const _origGoPage = typeof goPage === 'function' ? goPage : null;
+
+detLoadStats();
 // INIT
 checkAPI();
+
+function clsSet(a){document.getElementById('clsAddr').value=a;classifyWallet();}
+async function classifyWallet(){
+  const addr=document.getElementById('clsAddr').value.trim();if(!addr)return;
+  const el=document.getElementById('clsResult');
+  el.style.display='block';el.innerHTML='<div style="font-family:var(--mono);font-size:10px;color:var(--cyan)">Classifying...</div>';
+  try{
+    const r=await fetch(`${API}/v1/address/${addr}`,{headers:{'X-API-Key':TOKEN}});
+    const d=await r.json();
+    const risk=d.risk||{};const b=d.behavior||{};
+    const col=scCol(risk.risk_score||0);
+    const txCount=b.total_transactions||0;
+    const wealth=txCount<=2?'🦐 shrimp_wallet':txCount<=10?'🐟 fish_wallet':txCount<=50?'🐬 dolphin_wallet':txCount<=200?'🦈 shark_wallet':txCount<=1000?'🐳 whale_wallet':'🐋 mega_whale_wallet';
+    const activity=txCount===0?'empty_wallet':txCount===1?'one_time_wallet':txCount<=5?'low_activity_wallet':b.tx_per_block>3?'hyper_active_wallet':'active_wallet';
+    const behavior=risk.risk_level==='CRITICAL'?'sanctioned_wallet':b.tx_per_block>=3?'arbitrage_wallet':b.dex_interactions>10?'dex_trader_wallet':b.exchange_interactions>5?'exchange_deposit_wallet':'retail_wallet';
+    el.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg);border:1px solid var(--bdr);margin-bottom:10px">
+        <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${col};display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;font-weight:700;color:${col};flex-shrink:0">${risk.risk_score||0}</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:800;color:${col}">${risk.risk_level||'UNKNOWN'}</div><div style="font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:2px">${addr.slice(0,14)}...${addr.slice(-8)}</div><div style="font-family:var(--mono);font-size:9px;margin-top:3px">${d.label||'Unknown'}</div></div>
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;padding:5px 12px;border:2px solid ${col};color:${col}">${risk.recommendation||'—'}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px">
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:8px"><div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">① ACTIVITY</div><div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--cyan)">${activity}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:8px"><div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">② WEALTH</div><div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--green)">${wealth}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:8px"><div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">④ BEHAVIOR</div><div style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--purple)">${behavior}</div></div>
+        <div style="background:var(--bg);border:1px solid var(--bdr);padding:8px"><div style="font-family:var(--mono);font-size:7px;color:var(--muted2);margin-bottom:3px">⑤ RISK</div><div style="font-family:var(--mono);font-size:9px;font-weight:700;color:${col}">${risk.risk_level==='CRITICAL'?'sanctioned_wallet':risk.mixer_hit?'tornado_cash_user':risk.risk_score>60?'flagged_wallet':'compliant_wallet'}</div></div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${(risk.risk_factors||[]).map(f=>`<span style="font-family:var(--mono);font-size:8px;padding:2px 8px;border:1px solid ${f.includes('SANCTION')||f.includes('MIXER')?'var(--red)':'var(--amber)'};color:${f.includes('SANCTION')||f.includes('MIXER')?'var(--red)':'var(--amber)'}">${f}</span>`).join('')}</div>`;
+  }catch(e){el.innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--red)">Error: ${e.message}</div>`;}
+}
+
 autoToken().then(()=>{if(TOKEN)startLive();});
 setTimeout(()=>{if(TOKEN)startLive();},2000);
 </script>
