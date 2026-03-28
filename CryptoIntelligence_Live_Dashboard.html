@@ -1460,7 +1460,30 @@ const fcls=f=>{if(['SANCTIONS','MIXER','SCAM','HACK'].some(x=>f.includes(x)))ret
 
 // CLOCK
 const clock=()=>{document.getElementById('navClock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})};
-setInterval(clock,1000);clock();
+setInterval(clock,1000);
+
+async function loadLiveBlock(){
+  try{
+    const r=await fetch(API+'/v1/live');
+    const d=await r.json();
+    const bv=document.getElementById('liveBlockVal');
+    const tv=document.getElementById('liveTxVal');
+    if(bv){
+      const prev=bv.dataset.prev||0;
+      bv.dataset.prev=d.latest_block;
+      bv.textContent='#'+Number(d.latest_block).toLocaleString();
+      if(d.latest_block>prev&&prev>0){bv.classList.add('flash');setTimeout(()=>bv.classList.remove('flash'),600);}
+    }
+    if(tv){
+      const prev2=tv.dataset.prev||0;
+      tv.dataset.prev=d.tx_count;
+      tv.textContent=Number(d.tx_count).toLocaleString();
+      if(d.tx_count>prev2&&prev2>0){tv.classList.add('flash');setTimeout(()=>tv.classList.remove('flash'),600);}
+    }
+  }catch(e){}
+}
+setInterval(loadLiveBlock,3000);
+clock();
 
 // NAV
 function goPage(name,el){
