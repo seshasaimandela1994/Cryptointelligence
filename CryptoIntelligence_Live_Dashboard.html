@@ -2373,16 +2373,14 @@ setTimeout(()=>{if(TOKEN)startLive();},2000);
 <script>
 setTimeout(function(){
   var t='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDYxNDg3ODUsImlhdCI6MTc3NDYxMjc4NSwic3ViIjoiYXBpX3VzZXIifQ.RN-keXxh6ICKfwu6942bICOk6OK4juMsyrMgJZ3WwVc';
-  if(typeof API_TOKEN!=='undefined'){API_TOKEN=t;}
-  if(typeof TOKEN!=='undefined'){TOKEN=t;}
-  var b=document.getElementById('configBanner');
+  TOKEN=t;
   var i=document.getElementById('tokenInput');
+  var b=document.getElementById('cfgBanner');
   if(i)i.value=t;
   if(b)b.style.display='none';
-  if(typeof checkAPI==='function')checkAPI();
-  if(typeof loadStats==='function')loadStats();
-  if(typeof loadAlerts==='function')loadAlerts();
-  if(typeof detLoadStats==='function'){detLoadStats();detLoadRole('hot',null);detLoadCandidates();}
+  checkAPI();loadStats();loadAlerts();
+  if(typeof detLoadStats==='function'){detLoadStats();}
+  if(typeof loadAllExchangesFromDB==='function')loadAllExchangesFromDB();
   console.log('CryptoIntelligence: auto-connected');
 }, 1500);
 //AUTO_TOKEN
