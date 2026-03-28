@@ -1476,38 +1476,28 @@ setInterval(clock,1000);
 
 function startEthPriceFeed(){
   var prevPrice=0;
-  var ws=new WebSocket('wss://stream.binance.com:9443/ws/ethusdt@ticker');
-  ws.onmessage=function(e){
-    var d=JSON.parse(e.data);
-    var price=parseFloat(d.c);
-    var change=parseFloat(d.P);
-    var pv=document.getElementById('ethPriceVal');
-    var cv=document.getElementById('ethChangeVal');
-    if(pv){
-      pv.textContent='$'+price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-      if(prevPrice>0){
-        pv.style.color=price>prevPrice?'var(--green)':price<prevPrice?'var(--red)':'var(--amber)';
-        setTimeout(function(){pv.style.color='var(--amber)';},800);
-      }
-      prevPrice=price;
-    }
-    if(cv){
-      cv.textContent=(change>=0?'+':'')+change.toFixed(2)+'% 24h';
-      cv.style.color=change>=0?'var(--green)':'var(--red)';
-    }
-  };
-  ws.onerror=function(){
-    // Fallback to REST if WebSocket fails
-    fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT')
-      .then(r=>r.json()).then(d=>{
+  function tick(){
+    fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var price=parseFloat(d.price);
         var pv=document.getElementById('ethPriceVal');
-        var cv=document.getElementById('ethChangeVal');
-        if(pv)pv.textContent='$'+parseFloat(d.lastPrice).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-        if(cv){cv.textContent=(parseFloat(d.priceChangePercent)>=0?'+':'')+parseFloat(d.priceChangePercent).toFixed(2)+'% 24h';cv.style.color=parseFloat(d.priceChangePercent)>=0?'var(--green)':'var(--red)';}
+        if(pv){
+          var formatted='$'+price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+          pv.textContent=formatted;
+          if(prevPrice>0){
+            if(price>prevPrice){pv.style.color='var(--green)';}
+            else if(price<prevPrice){pv.style.color='var(--red)';}
+            setTimeout(function(){pv.style.color='var(--amber)';},500);
+          }
+          prevPrice=price;
+        }
       }).catch(function(){});
-  };
-  ws.onclose=function(){setTimeout(startEthPriceFeed,3000);}; // reconnect
+  }
+  tick();
+  setInterval(tick,1000);
 }
+
 async function loadEthPrice(){
   try{
     const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT');
