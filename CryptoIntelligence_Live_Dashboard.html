@@ -996,7 +996,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
 
   <!-- HERO -->
   <div class="stats-grid sg-6" style="margin-bottom:14px">
-    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Exchanges Tracked <span class="live-tag">● LIVE</span></div><div class="stat-val" id="ex-total">48</div><div class="stat-sub">registered entities</div></div>
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Exchanges Tracked <span class="live-tag">● LIVE</span></div><div class="stat-val" id="ex-total">—</div><div class="stat-sub">registered entities</div></div>
     <div class="stat" style="--ac:var(--green)"><div class="stat-lbl">Regulated</div><div class="stat-val" style="color:var(--green)">29</div><div class="stat-sub">verified jurisdictions</div></div>
     <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">Offshore</div><div class="stat-val" style="color:var(--amber)">19</div><div class="stat-sub">unregulated</div></div>
     <div class="stat" style="--ac:var(--red)"><div class="stat-lbl">Critical Risk</div><div class="stat-val" style="color:var(--red)">3</div><div class="stat-sub">FTX, Celsius, Mt.Gox</div></div>
@@ -1026,7 +1026,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
   <!-- EXCHANGE REGISTRY TABLE -->
   <div class="panel" style="margin-bottom:14px">
     <div class="ph">
-      <span class="pt"><div class="pulse-dot"></div>EXCHANGE REGISTRY — 48 ENTITIES</span>
+      <span class="pt"><div class="pulse-dot"></div>EXCHANGE REGISTRY — <span id="ex-registry-count">—</span> ENTITIES</span>
       <div style="display:flex;gap:8px;align-items:center">
         <input class="inp" id="exFilter" placeholder="Filter..." style="width:140px;padding:3px 8px;font-size:9px" oninput="filterExchanges()"/>
         <select id="exTierFilter" onchange="filterExchanges()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--muted2);font-family:var(--mono);font-size:9px;padding:3px 6px">
@@ -1470,7 +1470,7 @@ function goPage(name,el){
   el.classList.add('active');
   if(name==='screen')renderScreenDist();
   if(name==='exchanges')renderExchangeTable(exchangeData);
-  if(name==='cexv2')renderCexV2Table(cexV2Data);
+  if(name==='cexv2'){loadExchangesFromAPI();renderCexV2Table(cexV2Data);}
   if(name==='detection'){detLoadStats();detLoadRole('hot',null);detLoadCandidates();}
   if(name==='alerts')loadAlertsFull();
 }
@@ -1999,28 +1999,47 @@ function filterExchanges(){
 renderExchangeTable(exchangeData);
 
 
-const cexV2Data = [
-  {n:1,name:'Binance',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:true,por:true,mica:false,wallets:4,conf:0.9850},
-  {n:2,name:'Bybit',tier:'tier_1',juris:'UAE',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9650},
-  {n:3,name:'MEXC',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-  {n:4,name:'Gate',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
-  {n:5,name:'Crypto.com',tier:'tier_1',juris:'Singapore',reg:'mixed',aml:'medium',enf:false,por:true,mica:true,wallets:0,conf:0},
-  {n:6,name:'Bitget',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
-  {n:7,name:'OKX',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9700},
-  {n:8,name:'Coinbase',tier:'tier_1',juris:'United States',reg:'regulated',aml:'medium',enf:false,por:false,mica:true,wallets:3,conf:0.9800},
-  {n:9,name:'HTX',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:false,mica:false,wallets:2,conf:0.9650},
-  {n:10,name:'Upbit',tier:'tier_1',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-  {n:11,name:'Kraken',tier:'tier_1',juris:'United States',reg:'regulated',aml:'medium',enf:true,por:false,mica:true,wallets:2,conf:0.9800},
-  {n:12,name:'KuCoin',tier:'tier_2',juris:'Seychelles',reg:'mixed',aml:'high',enf:true,por:false,mica:false,wallets:0,conf:0},
-  {n:13,name:'Bitfinex',tier:'tier_2',juris:'BVI',reg:'mixed',aml:'medium',enf:true,por:false,mica:false,wallets:2,conf:0.9750},
-  {n:14,name:'Gemini',tier:'tier_2',juris:'United States',reg:'regulated',aml:'medium',enf:true,por:false,mica:true,wallets:2,conf:0.9850},
-  {n:15,name:'Bitstamp',tier:'tier_2',juris:'United Kingdom',reg:'regulated',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
-  {n:16,name:'Bithumb',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-  {n:17,name:'Coinone',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-  {n:18,name:'Korbit',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-  {n:19,name:'CEX.IO',tier:'tier_2',juris:'United Kingdom',reg:'mixed',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
-  {n:20,name:'Mercado Bitcoin',tier:'tier_2',juris:'Brazil',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-];
+let cexV2Data = [];
+
+// Load all exchanges from API
+async function loadAllExchangesFromDB(){
+  try {
+    const r = await fetch('http://localhost:8084/v1/cex/exchanges/list');
+    const d = await r.json();
+    if(d.exchanges && d.exchanges.length > 0){
+      cexV2Data = d.exchanges;
+      renderCexV2Table(cexV2Data);
+      const total = d.exchanges.length;
+      document.getElementById('ex-total').textContent = total;
+      document.getElementById('ex-registry-count').textContent = total;
+      return;
+    }
+  } catch(e) { console.log('API load failed, using fallback'); }
+  // Fallback static data
+  cexV2Data = [
+    {n:1,name:'Binance',tier:'tier_1',juris:'Cayman Islands',reg:'offshore',aml:'medium',enf:true,por:true,mica:false,wallets:4,conf:0.9850},
+    {n:2,name:'Coinbase',tier:'tier_1',juris:'United States',reg:'regulated',aml:'low',enf:false,por:false,mica:true,wallets:3,conf:0.9800},
+    {n:3,name:'OKX',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9700},
+    {n:4,name:'Bybit',tier:'tier_1',juris:'UAE',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9650},
+    {n:5,name:'Kraken',tier:'tier_1',juris:'United States',reg:'regulated',aml:'low',enf:true,por:false,mica:true,wallets:2,conf:0.9800},
+    {n:6,name:'KuCoin',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'high',enf:true,por:false,mica:false,wallets:0,conf:0},
+    {n:7,name:'Bitfinex',tier:'tier_1',juris:'BVI',reg:'mixed',aml:'high',enf:true,por:false,mica:false,wallets:2,conf:0.9750},
+    {n:8,name:'HTX',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:false,mica:false,wallets:2,conf:0.9650},
+    {n:9,name:'Gate.io',tier:'tier_1',juris:'Cayman Islands',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
+    {n:10,name:'Bitget',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
+    {n:11,name:'Crypto.com',tier:'tier_1',juris:'Singapore',reg:'regulated',aml:'low',enf:false,por:true,mica:true,wallets:0,conf:0},
+    {n:12,name:'Upbit',tier:'tier_1',juris:'South Korea',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
+    {n:13,name:'MEXC',tier:'tier_2',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+    {n:14,name:'Gemini',tier:'tier_2',juris:'United States',reg:'regulated',aml:'low',enf:true,por:false,mica:true,wallets:2,conf:0.9850},
+    {n:15,name:'Bitstamp',tier:'tier_2',juris:'United Kingdom',reg:'regulated',aml:'low',enf:false,por:false,mica:true,wallets:0,conf:0},
+    {n:16,name:'Bithumb',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+    {n:17,name:'Korbit',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
+    {n:18,name:'Coinone',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
+    {n:19,name:'CEX.IO',tier:'tier_2',juris:'United Kingdom',reg:'mixed',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
+    {n:20,name:'Mercado Bitcoin',tier:'tier_2',juris:'Brazil',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
+  ];
+  renderCexV2Table(cexV2Data);
+}
 
 function cexv2Set(a){document.getElementById('cexv2Addr').value=a;cexv2Lookup();}
 
@@ -2064,6 +2083,36 @@ async function cexv2Lookup(){
         <span style="font-family:var(--mono);font-size:10px;font-weight:700;padding:4px 12px;border:2px solid ${col};color:${col}">${risk.recommendation||'—'}</span>
       </div>`;
   }catch(e){el.innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--red)">Error: ${e.message}</div>`;}
+}
+
+async function loadExchangesFromAPI(){
+  try {
+    const r = await fetch('http://localhost:8084/v1/cex/stats');
+    const d = await r.json();
+    const total = d.total_exchanges || 0;
+    document.getElementById('ex-total').textContent = total;
+    document.getElementById('ex-registry-count').textContent = total;
+  } catch(e) { console.log('exchange stats:', e); }
+
+  try {
+    const r = await fetch('http://localhost:8084/v1/cex/candidates?limit=200&min_score=0.0');
+    // Load exchange list from CEX API
+    const r2 = await fetch('http://localhost:8084/v1/cex/exchange/Binance');
+  } catch(e) {}
+}
+
+async function loadAllExchanges(){
+  try {
+    // Load exchange list dynamically
+    const names = ['Binance','Coinbase','OKX','Bybit','Kraken','KuCoin','Bitfinex','HTX','Gate.io','Bitget','Crypto.com','Upbit','MEXC','Bithumb','Bitstamp','Gemini','Bybit','FTX','Celsius'];
+    const results = await Promise.allSettled(names.map(n => 
+      fetch('http://localhost:8084/v1/cex/exchange/'+encodeURIComponent(n)).then(r=>r.json())
+    ));
+    const exchanges = results.filter(r=>r.status==='fulfilled' && !r.value.error).map(r=>r.value);
+    if(exchanges.length > 0) renderCexV2Table(exchanges);
+  } catch(e) { 
+    renderCexV2Table(cexV2Data); 
+  }
 }
 
 function renderCexV2Table(data){
@@ -2284,6 +2333,7 @@ async function detLoadCandidates(){
 const _origGoPage = typeof goPage === 'function' ? goPage : null;
 
 detLoadStats();
+loadExchangesFromAPI();
 // INIT
 checkAPI();
 

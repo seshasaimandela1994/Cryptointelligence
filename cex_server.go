@@ -116,6 +116,7 @@ func main() {
 	v1.GET("/exchange/:name",  cexExchangeHandler)
 	v1.GET("/screen/:address", cexScreenHandler)
 	v1.GET("/top/:role",       cexTopByRoleHandler)
+	v1.GET("/exchanges/list",  cexExchangeListHandler)
 
 	registerReviewRoutes(r)
 	registerAlertRoutes(r)
@@ -638,4 +639,57 @@ func alertSummaryHandler(c *gin.Context) {
 		"total_sweep_events":         totalSweeps,
 		"platform_status":            "live",
 	})
+}
+
+func cexExchangeListHandler(c *gin.Context) {
+	rows, err := cexDB.Query(`
+		SELECT ee.canonical_name, ee.trust_tier::text,
+			ee.status::text, ee.exchange_category::text,
+			COALESCE(ee.primary_jurisdiction,'Unknown'),
+			COALESCE(ee.website_url,''),
+			COUNT(ewl.label_id) as wallet_count,
+			COALESCE(AVG(ewl.confidence_score),0) as avg_conf
+		FROM exchange_entities ee
+		LEFT JOIN exchange_wallet_labels ewl ON ewl.exchange_id=ee.exchange_id AND ewl.is_active=TRUE
+		GROUP BY ee.exchange_id, ee.canonical_name, ee.trust_tier,
+			ee.status, ee.exchange_category, ee.primary_jurisdiction, ee.website_url
+		ORDER BY ee.trust_tier, ee.canonical_name`)
+	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	defer rows.Close()
+
+	type Exchange struct {
+		N       int     `json:"n"`
+		Name    string  `json:"name"`
+		Tier    string  `json:"tier"`
+		Status  string  `json:"status"`
+		Cat     string  `json:"category"`
+		Juris   string  `json:"juris"`
+		Website string  `json:"website"`
+		Wallets int     `json:"wallets"`
+		Conf    float64 `json:"conf"`
+		Reg     string  `json:"reg"`
+		AML     string  `json:"aml"`
+	}
+
+	var exchanges []Exchange
+	i := 1
+	for rows.Next() {
+		var ex Exchange
+		rows.Scan(&ex.Name, &ex.Tier, &ex.Status, &ex.Cat,
+			&ex.Juris, &ex.Website, &ex.Wallets, &ex.Conf)
+		ex.N = i; i++
+		if ex.Juris == "United States" || ex.Juris == "United Kingdom" ||
+			ex.Juris == "Singapore" || ex.Juris == "Japan" || ex.Juris == "Australia" ||
+			ex.Juris == "Netherlands" || ex.Juris == "Austria" || ex.Juris == "Estonia" {
+			ex.Reg = "regulated"; ex.AML = "low"
+		} else if ex.Juris == "Seychelles" || ex.Juris == "Cayman Islands" ||
+			ex.Juris == "British Virgin Islands" || ex.Juris == "Malta" {
+			ex.Reg = "offshore"; ex.AML = "medium"
+		} else {
+			ex.Reg = "mixed"; ex.AML = "medium"
+		}
+		ex.Conf = float64(int(ex.Conf*10000)) / 10000
+		exchanges = append(exchanges, ex)
+	}
+	c.JSON(200, gin.H{"exchanges": exchanges, "total": len(exchanges)})
 }
