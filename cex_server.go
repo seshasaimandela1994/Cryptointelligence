@@ -416,7 +416,7 @@ func reviewQueueHandler(c *gin.Context) {
 		LEFT JOIN wallet_addresses wa ON wa.address=lrq.address
 		LEFT JOIN mv_wallet_role_candidates vrc ON vrc.wallet_id=wa.wallet_id
 		LEFT JOIN wallet_counterparty_stats_30d wcs ON wcs.wallet_id=wa.wallet_id
-		WHERE lrq.review_status='open'
+		WHERE lrq.review_status IN ('open','PENDING')
 		ORDER BY lrq.created_at DESC LIMIT $1`, limit)
 	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
 	defer rows.Close()
@@ -497,7 +497,7 @@ func reviewActionHandler(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "approved", "wallet_id": walletID, "analyst": analyst})
 
 	case "reject":
-		_, err = cexDB.Exec(`UPDATE label_review_queue SET review_status='rejected', reviewed_at=NOW(), reviewer_name=$1 WHERE address=(SELECT address FROM wallet_addresses WHERE wallet_id=$2) AND review_status='open'`, analyst, walletID)
+		_, err = cexDB.Exec(`UPDATE label_review_queue SET review_status='rejected', reviewed_at=NOW(), reviewer_name=$1 WHERE address=(SELECT address FROM wallet_addresses WHERE wallet_id=$2) AND review_status IN ('open','PENDING')`, analyst, walletID)
 		if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
 		c.JSON(200, gin.H{"status": "rejected", "wallet_id": walletID})
 
@@ -512,17 +512,19 @@ func reviewActionHandler(c *gin.Context) {
 }
 
 func reviewStatsHandler(c *gin.Context) {
-	var open, approved, rejected, critical, high int64
+	var open, approved, rejected, pending int64
 	cexDB.QueryRow(`SELECT
 		COUNT(*) FILTER (WHERE review_status='open'),
 		COUNT(*) FILTER (WHERE review_status='approved'),
 		COUNT(*) FILTER (WHERE review_status='rejected'),
-		COUNT(*) FILTER (WHERE review_status='open' AND review_priority='critical'),
-		COUNT(*) FILTER (WHERE review_status='open' AND review_priority='high')
-		FROM label_review_queue`).Scan(&open, &approved, &rejected, &critical, &high)
+		COUNT(*) FILTER (WHERE review_status='PENDING')
+		FROM label_review_queue`).Scan(&open, &approved, &rejected, &pending)
 	c.JSON(200, gin.H{
-		"open": open, "approved": approved, "rejected": rejected,
-		"critical_priority": critical, "high_priority": high,
+		"open": open + pending,
+		"approved": approved,
+		"rejected": rejected,
+		"pending": pending,
+		"total": open + pending + approved + rejected,
 	})
 }
 

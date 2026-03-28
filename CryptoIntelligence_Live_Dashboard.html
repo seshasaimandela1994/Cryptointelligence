@@ -160,6 +160,28 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{width:12px;height:12px;border:2px solid rgba(0,212,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 </style>
+
+<script>
+// Auto-connect with embedded token
+(function() {
+  var t = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDYxNDg3ODUsImlhdCI6MTc3NDYxMjc4NSwic3ViIjoiYXBpX3VzZXIifQ.RN-keXxh6ICKfwu6942bICOk6OK4juMsyrMgJZ3WwVc';
+  if(typeof API_TOKEN !== 'undefined') { API_TOKEN = t; TOKEN = t; }
+  window.addEventListener('DOMContentLoaded', function() {
+    var banner = document.getElementById('configBanner');
+    var inp = document.getElementById('tokenInput');
+    if(inp) inp.value = t;
+    if(typeof setToken === 'function') { setToken(); }
+    else {
+      if(typeof API_TOKEN !== 'undefined') API_TOKEN = t;
+      if(typeof TOKEN !== 'undefined') TOKEN = t;
+      if(banner) banner.style.display = 'none';
+      if(typeof checkAPI === 'function') checkAPI();
+      if(typeof loadStats === 'function') loadStats();
+      if(typeof loadAlerts === 'function') loadAlerts();
+    }
+  });
+})();
+</script>
 </head>
 <body>
 
@@ -2297,6 +2319,21 @@ async function classifyWallet(){
 
 autoToken().then(()=>{if(TOKEN)startLive();});
 setTimeout(()=>{if(TOKEN)startLive();},2000);
+</script>
+<script>
+window.addEventListener('load',function(){
+  var t='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDYxNDg3ODUsImlhdCI6MTc3NDYxMjc4NSwic3ViIjoiYXBpX3VzZXIifQ.RN-keXxh6ICKfwu6942bICOk6OK4juMsyrMgJZ3WwVc';
+  if(typeof API_TOKEN!=='undefined'){API_TOKEN=t;TOKEN=t;}
+  var b=document.getElementById('configBanner');
+  var i=document.getElementById('tokenInput');
+  if(i)i.value=t;
+  if(b)b.style.display='none';
+  if(typeof checkAPI==='function')checkAPI();
+  if(typeof loadStats==='function')loadStats();
+  if(typeof loadAlerts==='function')loadAlerts();
+  if(typeof detLoadStats==='function'){detLoadStats();detLoadRole('hot',null);detLoadCandidates();}
+});
+//AUTO_TOKEN
 </script>
 </body>
 </html>
