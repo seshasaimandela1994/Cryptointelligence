@@ -30,7 +30,7 @@ var jwtSecret = []byte("cryptointelligence-secret-2026")
 // Cache TTLs
 const (
 	ttlRisk    = 1 * time.Hour
-	ttlStats   = 30 * time.Second
+	ttlStats   = 3 * time.Second
 	ttlCluster = 30 * time.Minute
 	ttlAddress = 1 * time.Hour
 )
