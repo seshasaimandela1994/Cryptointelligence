@@ -1462,6 +1462,41 @@ const fcls=f=>{if(['SANCTIONS','MIXER','SCAM','HACK'].some(x=>f.includes(x)))ret
 const clock=()=>{document.getElementById('navClock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})};
 setInterval(clock,1000);
 
+async function loadEthPrice(){
+  try{
+    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true');
+    const d=await r.json();
+    const price=d.ethereum.usd;
+    const change=d.ethereum.usd_24h_change;
+    const pv=document.getElementById('ethPriceVal');
+    const cv=document.getElementById('ethChangeVal');
+    if(pv)pv.textContent='$'+price.toLocaleString();
+    if(cv){
+      cv.textContent=(change>=0?'+':'')+change.toFixed(2)+'% 24h';
+      cv.style.color=change>=0?'var(--green)':'var(--red)';
+    }
+  }catch(e){}
+}
+async function loadLiveBlock(){
+  try{
+    const r=await fetch(API+'/v1/live');
+    const d=await r.json();
+    const bv=document.getElementById('liveBlockVal');
+    const tv=document.getElementById('liveTxVal');
+    if(bv){
+      const prev=parseInt(bv.dataset.prev||0);
+      bv.dataset.prev=d.latest_block;
+      bv.textContent='#'+Number(d.latest_block).toLocaleString();
+      if(d.latest_block>prev&&prev>0){bv.style.color='var(--green)';setTimeout(()=>bv.style.color='var(--purple)',1000);}
+    }
+    if(tv)tv.textContent=Number(d.tx_count).toLocaleString()+' transfers';
+  }catch(e){}
+}
+loadEthPrice();loadLiveBlock();
+setInterval(loadEthPrice,30000);
+setInterval(loadLiveBlock,3000);
+
+
 async function loadLiveBlock(){
   try{
     const r=await fetch(API+'/v1/live');
