@@ -117,6 +117,9 @@ func main() {
 	v1.GET("/screen/:address", cexScreenHandler)
 	v1.GET("/top/:role",       cexTopByRoleHandler)
 
+	registerReviewRoutes(r)
+	registerAlertRoutes(r)
+
 	fmt.Println()
 	fmt.Println("  CryptoIntelligence — CEX Detection API")
 	fmt.Println("  ========================================")
@@ -303,24 +306,29 @@ func cexTopByRoleHandler(c *gin.Context) {
 	role := c.Param("role")
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	if limit > 100 { limit = 100 }
-	scoreMap := map[string]string{"deposit": "vrc.deposit_score", "hot": "vrc.hot_score", "cold": "vrc.cold_score"}
-	usdMap := map[string]string{"deposit": "wcs.total_inbound_usd_30d", "hot": "wcs.total_outbound_usd_30d", "cold": "wcs.total_inbound_usd_30d"}
-	scoreCol, ok := scoreMap[role]
+	type topQuery struct { table, scoreCol, usdCol, sendersCol, receiversCol string }
+	roleMap := map[string]topQuery{
+		"hot":     {"mv_wallet_hot_candidates",     "hot_candidate_score",     "total_outbound_usd_30d", "0", "total_unique_receivers_30d"},
+		"deposit": {"mv_wallet_deposit_candidates", "deposit_candidate_score", "total_inbound_usd_30d",  "total_unique_senders_30d", "0"},
+		"cold":    {"mv_wallet_cold_scores",        "cold_score",              "balance_usd",            "0", "0"},
+	}
+	tq, ok := roleMap[role]
 	if !ok { c.JSON(400, gin.H{"error": "role must be deposit, hot, or cold"}); return }
-	usdCol := usdMap[role]
-	rows, err := cexDB.Query(fmt.Sprintf(`SELECT vrc.address,
-		ROUND(COALESCE(%s,0)::numeric,4), COALESCE(%s,0),
-		COALESCE(wcs.unique_token_senders_30d,0),
-		COALESCE(wcs.unique_token_receivers_30d,0),
+	rows, err := cexDB.Query(fmt.Sprintf(`SELECT t.address,
+		ROUND(COALESCE(t.%s,0)::numeric,4),
+		COALESCE(t.%s,0),
+		COALESCE(t.%s,0),
+		COALESCE(t.%s,0),
 		COALESCE(ee.canonical_name,'NOT LABELED'),
 		COALESCE(ewl.wallet_role::text,'')
-		FROM mv_wallet_role_candidates vrc
-		LEFT JOIN wallet_counterparty_stats_30d wcs ON wcs.wallet_id=vrc.wallet_id
-		LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=vrc.wallet_id AND ewl.is_active=TRUE
+		FROM %s t
+		LEFT JOIN wallet_addresses wa ON wa.address=t.address
+		LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=wa.wallet_id AND ewl.is_active=TRUE
 		LEFT JOIN exchange_entities ee ON ee.exchange_id=ewl.exchange_id
-		WHERE COALESCE(%s,0) > 0.30
-		ORDER BY COALESCE(%s,0) DESC, %s DESC NULLS LAST
-		LIMIT $1`, scoreCol, usdCol, scoreCol, scoreCol, usdCol), limit)
+		WHERE COALESCE(t.%s,0) > 0.30
+		ORDER BY t.%s DESC NULLS LAST
+		LIMIT $1`, tq.scoreCol, tq.usdCol, tq.sendersCol, tq.receiversCol,
+		tq.table, tq.scoreCol, tq.scoreCol), limit)
 	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
 	defer rows.Close()
 	type Result struct {
@@ -345,4 +353,266 @@ func sanitize(s string) string {
 	s = strings.ReplaceAll(s, "'", "")
 	s = strings.ReplaceAll(s, ";", "")
 	return s
+}
+
+// ── ANALYST REVIEW WORKFLOW ───────────────────────────────
+
+type ReviewAction struct {
+	Action     string `json:"action"`      // approve, reject, dispute
+	ExchangeID *int64 `json:"exchange_id"` // required for approve
+	WalletRole string `json:"wallet_role"` // required for approve
+	Notes      string `json:"notes"`
+	Analyst    string `json:"analyst"`
+}
+
+func init() {
+	// Register review routes — called from main via router
+}
+
+func registerReviewRoutes(r *gin.Engine) {
+	review := r.Group("/v1/review")
+	review.GET("/queue",              reviewQueueHandler)
+	review.POST("/action/:wallet_id", reviewActionHandler)
+	review.GET("/stats",              reviewStatsHandler)
+}
+
+func reviewQueueHandler(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if limit > 200 { limit = 200 }
+
+	rows, err := cexDB.Query(`
+		SELECT lrq.review_id, lrq.address,
+			lrq.proposed_label_value,
+			ROUND(lrq.proposed_confidence::numeric,4),
+			COALESCE(lrq.reason,'detection_engine'),
+			lrq.review_status::text,
+			COALESCE(lrq.reviewer_name,''),
+			lrq.created_at,
+			COALESCE(vrc.best_candidate_score,0),
+			COALESCE(wcs.total_outbound_usd_30d,0),
+			COALESCE(wcs.unique_token_senders_30d,0)
+		FROM label_review_queue lrq
+		LEFT JOIN wallet_addresses wa ON wa.address=lrq.address
+		LEFT JOIN mv_wallet_role_candidates vrc ON vrc.wallet_id=wa.wallet_id
+		LEFT JOIN wallet_counterparty_stats_30d wcs ON wcs.wallet_id=wa.wallet_id
+		WHERE lrq.review_status='open'
+		ORDER BY lrq.created_at DESC LIMIT $1`, limit)
+	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	defer rows.Close()
+
+	type QueueItem struct {
+		ReviewID    int64   `json:"review_id"`
+		Address     string  `json:"address"`
+		Role        string  `json:"proposed_label"`
+		Confidence  float64 `json:"proposed_confidence"`
+		Reason      string  `json:"reason"`
+		Status      string  `json:"status"`
+		Reviewer    string  `json:"reviewer,omitempty"`
+		CreatedAt   string  `json:"created_at"`
+		BestScore   float64 `json:"detection_score"`
+		OutboundUSD float64 `json:"outbound_usd_30d"`
+		Senders     int64   `json:"unique_senders_30d"`
+	}
+
+	var items []QueueItem
+	for rows.Next() {
+		var item QueueItem
+		var createdAt time.Time
+		rows.Scan(&item.ReviewID, &item.Address, &item.Role, &item.Confidence,
+			&item.Reason, &item.Status, &item.Reviewer, &createdAt,
+			&item.BestScore, &item.OutboundUSD, &item.Senders)
+		item.CreatedAt = createdAt.Format(time.RFC3339)
+		items = append(items, item)
+	}
+	c.JSON(200, gin.H{"total": len(items), "items": items})
+}
+
+func reviewActionHandler(c *gin.Context) {
+	walletIDStr := c.Param("wallet_id")
+	walletID, err := strconv.ParseInt(walletIDStr, 10, 64)
+	if err != nil { c.JSON(400, gin.H{"error": "invalid wallet_id"}); return }
+
+	var action ReviewAction
+	if err := c.ShouldBindJSON(&action); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()}); return
+	}
+
+	analyst := action.Analyst
+	if analyst == "" { analyst = "analyst" }
+
+	switch action.Action {
+	case "approve":
+		if action.ExchangeID == nil || action.WalletRole == "" {
+			c.JSON(400, gin.H{"error": "approve requires exchange_id and wallet_role"}); return
+		}
+		tx, _ := cexDB.Begin()
+
+		// Add to exchange_wallet_labels
+		_, err = tx.Exec(`
+			INSERT INTO exchange_wallet_labels (
+				wallet_id, exchange_id, wallet_role, wallet_subrole,
+				attribution_method, confidence_score, confidence_band,
+				review_status, is_primary_label, is_active,
+				analyst_notes, created_by, approved_by
+			) VALUES ($1,$2,$3::wallet_role_enum,'none'::wallet_subrole_enum,
+				'model_predicted'::attribution_method_enum,
+				0.85,'high'::confidence_band_enum,
+				'approved'::review_status_enum,TRUE,TRUE,$4,$5,$5)
+			ON CONFLICT DO NOTHING`,
+			walletID, *action.ExchangeID, action.WalletRole,
+			action.Notes, analyst)
+		if err != nil { tx.Rollback(); c.JSON(500, gin.H{"error": err.Error()}); return }
+
+		// Update wallet status
+		tx.Exec(`UPDATE wallet_addresses SET current_label_status='labeled' WHERE wallet_id=$1`, walletID)
+
+		// Close review queue item
+		tx.Exec(`UPDATE label_review_queue SET review_status='approved', resolved_at=NOW(), assigned_to=$1 WHERE wallet_id=$2 AND review_status='open'`, analyst, walletID)
+
+		// Update stats cache
+		tx.Exec(`UPDATE cex_stats_cache SET value=value+1, updated_at=NOW() WHERE key='exchange_labels'`)
+
+		tx.Commit()
+		c.JSON(200, gin.H{"status": "approved", "wallet_id": walletID, "analyst": analyst})
+
+	case "reject":
+		_, err = cexDB.Exec(`UPDATE label_review_queue SET review_status='rejected', reviewed_at=NOW(), reviewer_name=$1 WHERE address=(SELECT address FROM wallet_addresses WHERE wallet_id=$2) AND review_status='open'`, analyst, walletID)
+		if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+		c.JSON(200, gin.H{"status": "rejected", "wallet_id": walletID})
+
+	case "dispute":
+		_, err = cexDB.Exec(`UPDATE label_review_queue SET review_status='rejected', assigned_to=$1 WHERE address=(SELECT address FROM wallet_addresses WHERE wallet_id=$2) AND review_status='open'`, analyst, walletID)
+		cexDB.Exec(`UPDATE exchange_wallet_labels SET review_status='disputed', analyst_notes=$1 WHERE wallet_id=$2 AND is_active=TRUE`, action.Notes, walletID)
+		c.JSON(200, gin.H{"status": "disputed", "wallet_id": walletID})
+
+	default:
+		c.JSON(400, gin.H{"error": "action must be approve, reject, or dispute"})
+	}
+}
+
+func reviewStatsHandler(c *gin.Context) {
+	var open, approved, rejected, critical, high int64
+	cexDB.QueryRow(`SELECT
+		COUNT(*) FILTER (WHERE review_status='open'),
+		COUNT(*) FILTER (WHERE review_status='approved'),
+		COUNT(*) FILTER (WHERE review_status='rejected'),
+		COUNT(*) FILTER (WHERE review_status='open' AND review_priority='critical'),
+		COUNT(*) FILTER (WHERE review_status='open' AND review_priority='high')
+		FROM label_review_queue`).Scan(&open, &approved, &rejected, &critical, &high)
+	c.JSON(200, gin.H{
+		"open": open, "approved": approved, "rejected": rejected,
+		"critical_priority": critical, "high_priority": high,
+	})
+}
+
+// ── ALERT SYSTEM ─────────────────────────────────────────
+
+func registerAlertRoutes(r *gin.Engine) {
+	alerts := r.Group("/v1/alerts/cex")
+	alerts.GET("/new",     newCandidateAlertsHandler)
+	alerts.GET("/sweeps",  sweepAlertsHandler)
+	alerts.GET("/summary", alertSummaryHandler)
+}
+
+func newCandidateAlertsHandler(c *gin.Context) {
+	hours, _ := strconv.Atoi(c.DefaultQuery("hours", "24"))
+	minScore, _ := strconv.ParseFloat(c.DefaultQuery("min_score", "0.85"), 64)
+
+	rows, err := cexDB.Query(`
+		SELECT wa.address, vrc.best_candidate_role,
+			ROUND(vrc.best_candidate_score::numeric,4),
+			COALESCE(wcs.total_outbound_usd_30d,0),
+			COALESCE(wcs.unique_token_senders_30d,0),
+			wfe.last_computed_at,
+			COALESCE(ee.canonical_name,'NOT LABELED')
+		FROM mv_wallet_role_candidates vrc
+		JOIN wallet_addresses wa ON wa.wallet_id=vrc.wallet_id
+		JOIN wallet_features_ethereum wfe ON wfe.wallet_id=vrc.wallet_id
+		LEFT JOIN wallet_counterparty_stats_30d wcs ON wcs.wallet_id=vrc.wallet_id
+		LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=vrc.wallet_id AND ewl.is_active=TRUE
+		LEFT JOIN exchange_entities ee ON ee.exchange_id=ewl.exchange_id
+		WHERE vrc.best_candidate_score >= $1
+		  AND wfe.last_computed_at >= NOW() - ($2 || ' hours')::interval
+		  AND ewl.label_id IS NULL
+		ORDER BY vrc.best_candidate_score DESC, wcs.total_outbound_usd_30d DESC NULLS LAST
+		LIMIT 50`, minScore, hours)
+	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	defer rows.Close()
+
+	type Alert struct {
+		Address     string  `json:"address"`
+		Role        string  `json:"best_role"`
+		Score       float64 `json:"score"`
+		OutboundUSD float64 `json:"outbound_usd_30d"`
+		Senders     int64   `json:"unique_senders_30d"`
+		DetectedAt  string  `json:"detected_at"`
+		Exchange    string  `json:"known_exchange"`
+		Severity    string  `json:"severity"`
+	}
+
+	var alerts []Alert
+	for rows.Next() {
+		var a Alert
+		var detectedAt time.Time
+		rows.Scan(&a.Address, &a.Role, &a.Score, &a.OutboundUSD,
+			&a.Senders, &detectedAt, &a.Exchange)
+		a.DetectedAt = detectedAt.Format(time.RFC3339)
+		if a.Score >= 0.90 { a.Severity = "critical" } else if a.Score >= 0.85 { a.Severity = "high" } else { a.Severity = "medium" }
+		alerts = append(alerts, a)
+	}
+	c.JSON(200, gin.H{"total": len(alerts), "hours": hours, "min_score": minScore, "alerts": alerts})
+}
+
+func sweepAlertsHandler(c *gin.Context) {
+	rows, err := cexDB.Query(`
+		SELECT wa_src.address, wa_dst.address,
+			ROUND(dse.heuristic_score::numeric,4),
+			COALESCE(dse.sweep_amount_usd,0),
+			dse.inbound_count_prior_7d,
+			dse.created_at,
+			COALESCE(ee.canonical_name,'Unknown')
+		FROM deposit_sweep_events dse
+		JOIN wallet_addresses wa_src ON wa_src.wallet_id=dse.source_wallet_id
+		JOIN wallet_addresses wa_dst ON wa_dst.wallet_id=dse.destination_wallet_id
+		LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=dse.destination_wallet_id AND ewl.is_active=TRUE
+		LEFT JOIN exchange_entities ee ON ee.exchange_id=ewl.exchange_id
+		WHERE dse.heuristic_score >= 0.90
+		ORDER BY dse.heuristic_score DESC, dse.sweep_amount_usd DESC NULLS LAST
+		LIMIT 20`)
+	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	defer rows.Close()
+
+	type SweepAlert struct {
+		Source      string  `json:"source_address"`
+		Destination string  `json:"destination_address"`
+		Score       float64 `json:"heuristic_score"`
+		SweepUSD    float64 `json:"sweep_amount_usd"`
+		InboundCount int64  `json:"inbound_count"`
+		DetectedAt  string  `json:"detected_at"`
+		DestExchange string `json:"destination_exchange"`
+	}
+
+	var sweeps []SweepAlert
+	for rows.Next() {
+		var s SweepAlert
+		var detectedAt time.Time
+		rows.Scan(&s.Source, &s.Destination, &s.Score, &s.SweepUSD,
+			&s.InboundCount, &detectedAt, &s.DestExchange)
+		s.DetectedAt = detectedAt.Format(time.RFC3339)
+		sweeps = append(sweeps, s)
+	}
+	c.JSON(200, gin.H{"total": len(sweeps), "sweeps": sweeps})
+}
+
+func alertSummaryHandler(c *gin.Context) {
+	var newCandidates, highSweeps, totalSweeps int64
+	cexDB.QueryRow(`SELECT COUNT(*) FROM mv_wallet_role_candidates WHERE best_candidate_score >= 0.90`).Scan(&newCandidates)
+	cexDB.QueryRow(`SELECT COUNT(*) FROM deposit_sweep_events WHERE heuristic_score >= 0.90`).Scan(&highSweeps)
+	cexDB.QueryRow(`SELECT COUNT(*) FROM deposit_sweep_events`).Scan(&totalSweeps)
+	c.JSON(200, gin.H{
+		"high_confidence_candidates": newCandidates,
+		"high_score_sweeps":          highSweeps,
+		"total_sweep_events":         totalSweeps,
+		"platform_status":            "live",
+	})
 }
