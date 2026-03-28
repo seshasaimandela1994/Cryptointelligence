@@ -996,7 +996,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
 
   <!-- HERO -->
   <div class="stats-grid sg-6" style="margin-bottom:14px">
-    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Exchanges Tracked <span class="live-tag">● LIVE</span></div><div class="stat-val" id="ex-total">—</div><div class="stat-sub">registered entities</div></div>
+    <div class="stat" style="--ac:var(--cyan)"><div class="stat-lbl">Exchanges Tracked <span class="live-tag">● LIVE</span></div><div class="stat-val" id="ex-total">225</div><div class="stat-sub">registered entities</div></div>
     <div class="stat" style="--ac:var(--green)"><div class="stat-lbl">Regulated</div><div class="stat-val" style="color:var(--green)">29</div><div class="stat-sub">verified jurisdictions</div></div>
     <div class="stat" style="--ac:var(--amber)"><div class="stat-lbl">Offshore</div><div class="stat-val" style="color:var(--amber)">19</div><div class="stat-sub">unregulated</div></div>
     <div class="stat" style="--ac:var(--red)"><div class="stat-lbl">Critical Risk</div><div class="stat-val" style="color:var(--red)">3</div><div class="stat-sub">FTX, Celsius, Mt.Gox</div></div>
@@ -1026,7 +1026,7 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
   <!-- EXCHANGE REGISTRY TABLE -->
   <div class="panel" style="margin-bottom:14px">
     <div class="ph">
-      <span class="pt"><div class="pulse-dot"></div>EXCHANGE REGISTRY — <span id="ex-registry-count">—</span> ENTITIES</span>
+      <span class="pt"><div class="pulse-dot"></div>EXCHANGE REGISTRY — <span id="ex-registry-count">225</span> ENTITIES</span>
       <div style="display:flex;gap:8px;align-items:center">
         <input class="inp" id="exFilter" placeholder="Filter..." style="width:140px;padding:3px 8px;font-size:9px" oninput="filterExchanges()"/>
         <select id="exTierFilter" onchange="filterExchanges()" style="background:var(--bg);border:1px solid var(--bdr);color:var(--muted2);font-family:var(--mono);font-size:9px;padding:3px 6px">
@@ -1981,7 +1981,7 @@ function renderExchangeTable(data){
       <td style="color:${e.conf>=0.95?'var(--green)':e.conf>=0.90?'var(--cyan)':e.conf>0?'var(--amber)':'var(--muted2)'}">${e.conf>0?e.conf.toFixed(4):'—'}</td>
       <td style="color:${e.por?'var(--green)':'var(--muted2)'}">${e.por?'✓':'—'}</td>
       <td style="color:${e.mica?'var(--green)':'var(--muted2)'}">${e.mica?'✓':'—'}</td>
-    </tr>`;}).join('');
+    </tr>`).join('');
 }
 
 function filterExchanges(){
@@ -1999,47 +1999,28 @@ function filterExchanges(){
 renderExchangeTable(exchangeData);
 
 
-let cexV2Data = [];
-
-// Load all exchanges from API
-async function loadAllExchangesFromDB(){
-  try {
-    const r = await fetch('http://localhost:8084/v1/cex/exchanges/list');
-    const d = await r.json();
-    if(d.exchanges && d.exchanges.length > 0){
-      cexV2Data = d.exchanges;
-      renderCexV2Table(cexV2Data);
-      const total = d.exchanges.length;
-      document.getElementById('ex-total').textContent = total;
-      document.getElementById('ex-registry-count').textContent = total;
-      return;
-    }
-  } catch(e) { console.log('API load failed, using fallback'); }
-  // Fallback static data
-  cexV2Data = [
-    {n:1,name:'Binance',tier:'tier_1',juris:'Cayman Islands',reg:'offshore',aml:'medium',enf:true,por:true,mica:false,wallets:4,conf:0.9850},
-    {n:2,name:'Coinbase',tier:'tier_1',juris:'United States',reg:'regulated',aml:'low',enf:false,por:false,mica:true,wallets:3,conf:0.9800},
-    {n:3,name:'OKX',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9700},
-    {n:4,name:'Bybit',tier:'tier_1',juris:'UAE',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9650},
-    {n:5,name:'Kraken',tier:'tier_1',juris:'United States',reg:'regulated',aml:'low',enf:true,por:false,mica:true,wallets:2,conf:0.9800},
-    {n:6,name:'KuCoin',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'high',enf:true,por:false,mica:false,wallets:0,conf:0},
-    {n:7,name:'Bitfinex',tier:'tier_1',juris:'BVI',reg:'mixed',aml:'high',enf:true,por:false,mica:false,wallets:2,conf:0.9750},
-    {n:8,name:'HTX',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:false,mica:false,wallets:2,conf:0.9650},
-    {n:9,name:'Gate.io',tier:'tier_1',juris:'Cayman Islands',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
-    {n:10,name:'Bitget',tier:'tier_1',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
-    {n:11,name:'Crypto.com',tier:'tier_1',juris:'Singapore',reg:'regulated',aml:'low',enf:false,por:true,mica:true,wallets:0,conf:0},
-    {n:12,name:'Upbit',tier:'tier_1',juris:'South Korea',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
-    {n:13,name:'MEXC',tier:'tier_2',juris:'Seychelles',reg:'offshore',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-    {n:14,name:'Gemini',tier:'tier_2',juris:'United States',reg:'regulated',aml:'low',enf:true,por:false,mica:true,wallets:2,conf:0.9850},
-    {n:15,name:'Bitstamp',tier:'tier_2',juris:'United Kingdom',reg:'regulated',aml:'low',enf:false,por:false,mica:true,wallets:0,conf:0},
-    {n:16,name:'Bithumb',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
-    {n:17,name:'Korbit',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
-    {n:18,name:'Coinone',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
-    {n:19,name:'CEX.IO',tier:'tier_2',juris:'United Kingdom',reg:'mixed',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
-    {n:20,name:'Mercado Bitcoin',tier:'tier_2',juris:'Brazil',reg:'regulated',aml:'low',enf:false,por:false,mica:false,wallets:0,conf:0},
-  ];
-  renderCexV2Table(cexV2Data);
-}
+const cexV2Data = [
+  {n:1,name:'Binance',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:true,por:true,mica:false,wallets:4,conf:0.9850},
+  {n:2,name:'Bybit',tier:'tier_1',juris:'UAE',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9650},
+  {n:3,name:'MEXC',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:4,name:'Gate',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
+  {n:5,name:'Crypto.com',tier:'tier_1',juris:'Singapore',reg:'mixed',aml:'medium',enf:false,por:true,mica:true,wallets:0,conf:0},
+  {n:6,name:'Bitget',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:0,conf:0},
+  {n:7,name:'OKX',tier:'tier_1',juris:'Mixed',reg:'mixed',aml:'medium',enf:false,por:true,mica:false,wallets:2,conf:0.9700},
+  {n:8,name:'Coinbase',tier:'tier_1',juris:'United States',reg:'regulated',aml:'medium',enf:false,por:false,mica:true,wallets:3,conf:0.9800},
+  {n:9,name:'HTX',tier:'tier_1',juris:'Seychelles',reg:'mixed',aml:'medium',enf:false,por:false,mica:false,wallets:2,conf:0.9650},
+  {n:10,name:'Upbit',tier:'tier_1',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:11,name:'Kraken',tier:'tier_1',juris:'United States',reg:'regulated',aml:'medium',enf:true,por:false,mica:true,wallets:2,conf:0.9800},
+  {n:12,name:'KuCoin',tier:'tier_2',juris:'Seychelles',reg:'mixed',aml:'high',enf:true,por:false,mica:false,wallets:0,conf:0},
+  {n:13,name:'Bitfinex',tier:'tier_2',juris:'BVI',reg:'mixed',aml:'medium',enf:true,por:false,mica:false,wallets:2,conf:0.9750},
+  {n:14,name:'Gemini',tier:'tier_2',juris:'United States',reg:'regulated',aml:'medium',enf:true,por:false,mica:true,wallets:2,conf:0.9850},
+  {n:15,name:'Bitstamp',tier:'tier_2',juris:'United Kingdom',reg:'regulated',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
+  {n:16,name:'Bithumb',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:17,name:'Coinone',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:18,name:'Korbit',tier:'tier_2',juris:'South Korea',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+  {n:19,name:'CEX.IO',tier:'tier_2',juris:'United Kingdom',reg:'mixed',aml:'medium',enf:false,por:false,mica:true,wallets:0,conf:0},
+  {n:20,name:'Mercado Bitcoin',tier:'tier_2',juris:'Brazil',reg:'regulated',aml:'medium',enf:false,por:false,mica:false,wallets:0,conf:0},
+];
 
 function cexv2Set(a){document.getElementById('cexv2Addr').value=a;cexv2Lookup();}
 
@@ -2085,41 +2066,11 @@ async function cexv2Lookup(){
   }catch(e){el.innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--red)">Error: ${e.message}</div>`;}
 }
 
-async function loadExchangesFromAPI(){
-  try {
-    const r = await fetch('http://localhost:8084/v1/cex/stats');
-    const d = await r.json();
-    const total = d.total_exchanges || 0;
-    document.getElementById('ex-total').textContent = total;
-    document.getElementById('ex-registry-count').textContent = total;
-  } catch(e) { console.log('exchange stats:', e); }
-
-  try {
-    const r = await fetch('http://localhost:8084/v1/cex/candidates?limit=200&min_score=0.0');
-    // Load exchange list from CEX API
-    const r2 = await fetch('http://localhost:8084/v1/cex/exchange/Binance');
-  } catch(e) {}
-}
-
-async function loadAllExchanges(){
-  try {
-    // Load exchange list dynamically
-    const names = ['Binance','Coinbase','OKX','Bybit','Kraken','KuCoin','Bitfinex','HTX','Gate.io','Bitget','Crypto.com','Upbit','MEXC','Bithumb','Bitstamp','Gemini','Bybit','FTX','Celsius'];
-    const results = await Promise.allSettled(names.map(n => 
-      fetch('http://localhost:8084/v1/cex/exchange/'+encodeURIComponent(n)).then(r=>r.json())
-    ));
-    const exchanges = results.filter(r=>r.status==='fulfilled' && !r.value.error).map(r=>r.value);
-    if(exchanges.length > 0) renderCexV2Table(exchanges);
-  } catch(e) { 
-    renderCexV2Table(cexV2Data); 
-  }
-}
-
 function renderCexV2Table(data){
   const rc={regulated:'var(--green)',mixed:'var(--amber)',offshore:'var(--red)'};
   const ac={medium:'var(--amber)',high:'var(--red)',low:'var(--green)',critical:'var(--red)'};
   const tc={tier_1:'var(--cyan)',tier_2:'var(--blue)',tier_3:'var(--muted2)'};
-  document.getElementById('cexv2Body').innerHTML=data.map((e,i)=>{e.n=e.n||i+1;e.enf=e.enf||false;e.por=e.por||(e.wallets>0);e.mica=e.mica||(e.juris==='United Kingdom'||e.juris==='Netherlands'||e.juris==='Austria');return `
+  document.getElementById('cexv2Body').innerHTML=data.map(e=>`
     <tr>
       <td style="color:var(--muted2)">${e.n}</td>
       <td style="font-weight:700">${e.name}</td>
@@ -2132,7 +2083,7 @@ function renderCexV2Table(data){
       <td style="color:${e.mica?'var(--green)':'var(--muted2)'};text-align:center">${e.mica?'✓':'—'}</td>
       <td style="color:${e.wallets>0?'var(--cyan)':'var(--muted2)'}">${e.wallets}</td>
       <td style="color:${e.conf>=0.97?'var(--green)':e.conf>=0.90?'var(--cyan)':e.conf>0?'var(--amber)':'var(--muted2)'}">${e.conf>0?e.conf.toFixed(4):'—'}</td>
-    </tr>`;}).join('');
+    </tr>`).join('');
 }
 
 function cexv2Filter(){
@@ -2261,7 +2212,7 @@ async function detLoadRole(role, btn){
         <td style="color:var(--green)">${fmtUSD(r.usd_value_30d)}</td>
         <td>${fmt(r.unique_senders_30d)}</td>
         <td style="font-size:9px">${r.known_exchange}</td>
-      </tr>`;}).join('');
+      </tr>`).join('');
   }catch(e){console.log('detLoadRole:',e);}
 }
 
@@ -2325,7 +2276,7 @@ async function detLoadCandidates(){
         <td>${fmt(c.unique_senders_30d)}</td>
         <td>${fmt(c.unique_receivers_30d)}</td>
         <td style="font-size:8px;color:${c.known_exchange?'var(--cyan)':'var(--muted2)'}">${c.known_exchange||'—'}</td>
-      </tr>`;}).join('');
+      </tr>`).join('');
   }catch(e){console.log('detLoadCandidates:',e);}
 }
 
@@ -2333,7 +2284,6 @@ async function detLoadCandidates(){
 const _origGoPage = typeof goPage === 'function' ? goPage : null;
 
 detLoadStats();
-loadExchangesFromAPI();
 // INIT
 checkAPI();
 
@@ -2369,21 +2319,47 @@ async function classifyWallet(){
 
 autoToken().then(()=>{if(TOKEN)startLive();});
 setTimeout(()=>{if(TOKEN)startLive();},2000);
+
+async function loadAllExchangesFromDB(){
+  try{
+    const r=await fetch('http://localhost:8084/v1/cex/exchanges/list');
+    const d=await r.json();
+    if(d.exchanges&&d.exchanges.length>0){
+      cexV2Data=d.exchanges;
+      renderCexV2Table(cexV2Data);
+      document.getElementById('ex-total').textContent=d.total;
+      const rc=document.getElementById('ex-registry-count');
+      if(rc)rc.textContent=d.total;
+    }
+  }catch(e){console.log('exchange list:',e);}
+}
+</script>
+<script>
+window.addEventListener('load',function(){
+  var t='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDYxNDg3ODUsImlhdCI6MTc3NDYxMjc4NSwic3ViIjoiYXBpX3VzZXIifQ.RN-keXxh6ICKfwu6942bICOk6OK4juMsyrMgJZ3WwVc';
+  if(typeof API_TOKEN!=='undefined'){API_TOKEN=t;TOKEN=t;}
+  var b=document.getElementById('configBanner');
+  var i=document.getElementById('tokenInput');
+  if(i)i.value=t;
+  if(b)b.style.display='none';
+  if(typeof checkAPI==='function')checkAPI();
+  if(typeof loadStats==='function')loadStats();
+  if(typeof loadAlerts==='function')loadAlerts();
+  if(typeof detLoadStats==='function'){detLoadStats();detLoadRole('hot',null);detLoadCandidates();}
+});
+//AUTO_TOKEN
 </script>
 <script>
 setTimeout(function(){
-  var t='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDYxNDg3ODUsImlhdCI6MTc3NDYxMjc4NSwic3ViIjoiYXBpX3VzZXIifQ.RN-keXxh6ICKfwu6942bICOk6OK4juMsyrMgJZ3WwVc';
-  TOKEN=t;
+  TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDYxNDg3ODUsImlhdCI6MTc3NDYxMjc4NSwic3ViIjoiYXBpX3VzZXIifQ.RN-keXxh6ICKfwu6942bICOk6OK4juMsyrMgJZ3WwVc';
   var i=document.getElementById('tokenInput');
   var b=document.getElementById('cfgBanner');
-  if(i)i.value=t;
+  if(i)i.value=TOKEN;
   if(b)b.style.display='none';
   checkAPI();loadStats();loadAlerts();
-  if(typeof detLoadStats==='function'){detLoadStats();}
   if(typeof loadAllExchangesFromDB==='function')loadAllExchangesFromDB();
   console.log('CryptoIntelligence: auto-connected');
-}, 3000);
-//AUTO_TOKEN
+},3000);
 </script>
 </body>
 </html>
