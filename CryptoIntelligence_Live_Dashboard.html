@@ -250,6 +250,18 @@ nav{position:sticky;top:0;z-index:200;background:rgba(3,8,16,.97);border-bottom:
 <div class="page active" id="page-overview">
 
   <div class="stats-grid sg-6">
+    <div class="stat" style="--ac:var(--amber)">
+      <div class="stat-lbl">ETH PRICE <span class="live-tag">● LIVE</span></div>
+      <div class="stat-val" id="ethPriceVal" style="color:var(--amber)">—</div>
+      <div class="stat-sub" id="ethChangeVal">loading...</div>
+      <div class="stat-delta"></div>
+    </div>
+    <div class="stat" style="--ac:var(--purple)">
+      <div class="stat-lbl">LIVE BLOCK <span class="live-tag">● CHAIN</span></div>
+      <div class="stat-val" id="liveBlockVal" style="color:var(--purple);font-size:15px">—</div>
+      <div class="stat-sub" id="liveTxVal">— transfers</div>
+      <div class="stat-delta"></div>
+    </div>
     <div class="stat" style="--ac:var(--cyan)">
       <div class="stat-lbl">Total Addresses <span class="live-tag">● LIVE</span></div>
       <div class="stat-val" id="s-total">—</div>
