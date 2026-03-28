@@ -1981,7 +1981,7 @@ function renderExchangeTable(data){
       <td style="color:${e.conf>=0.95?'var(--green)':e.conf>=0.90?'var(--cyan)':e.conf>0?'var(--amber)':'var(--muted2)'}">${e.conf>0?e.conf.toFixed(4):'—'}</td>
       <td style="color:${e.por?'var(--green)':'var(--muted2)'}">${e.por?'✓':'—'}</td>
       <td style="color:${e.mica?'var(--green)':'var(--muted2)'}">${e.mica?'✓':'—'}</td>
-    </tr>`).join('');
+    </tr>`;}).join('');
 }
 
 function filterExchanges(){
@@ -2119,7 +2119,7 @@ function renderCexV2Table(data){
   const rc={regulated:'var(--green)',mixed:'var(--amber)',offshore:'var(--red)'};
   const ac={medium:'var(--amber)',high:'var(--red)',low:'var(--green)',critical:'var(--red)'};
   const tc={tier_1:'var(--cyan)',tier_2:'var(--blue)',tier_3:'var(--muted2)'};
-  document.getElementById('cexv2Body').innerHTML=data.map(e=>`
+  document.getElementById('cexv2Body').innerHTML=data.map((e,i)=>{e.n=e.n||i+1;e.enf=e.enf||false;e.por=e.por||(e.wallets>0);e.mica=e.mica||(e.juris==='United Kingdom'||e.juris==='Netherlands'||e.juris==='Austria');return `
     <tr>
       <td style="color:var(--muted2)">${e.n}</td>
       <td style="font-weight:700">${e.name}</td>
@@ -2132,7 +2132,7 @@ function renderCexV2Table(data){
       <td style="color:${e.mica?'var(--green)':'var(--muted2)'};text-align:center">${e.mica?'✓':'—'}</td>
       <td style="color:${e.wallets>0?'var(--cyan)':'var(--muted2)'}">${e.wallets}</td>
       <td style="color:${e.conf>=0.97?'var(--green)':e.conf>=0.90?'var(--cyan)':e.conf>0?'var(--amber)':'var(--muted2)'}">${e.conf>0?e.conf.toFixed(4):'—'}</td>
-    </tr>`).join('');
+    </tr>`;}).join('');
 }
 
 function cexv2Filter(){
@@ -2261,7 +2261,7 @@ async function detLoadRole(role, btn){
         <td style="color:var(--green)">${fmtUSD(r.usd_value_30d)}</td>
         <td>${fmt(r.unique_senders_30d)}</td>
         <td style="font-size:9px">${r.known_exchange}</td>
-      </tr>`).join('');
+      </tr>`;}).join('');
   }catch(e){console.log('detLoadRole:',e);}
 }
 
@@ -2325,7 +2325,7 @@ async function detLoadCandidates(){
         <td>${fmt(c.unique_senders_30d)}</td>
         <td>${fmt(c.unique_receivers_30d)}</td>
         <td style="font-size:8px;color:${c.known_exchange?'var(--cyan)':'var(--muted2)'}">${c.known_exchange||'—'}</td>
-      </tr>`).join('');
+      </tr>`;}).join('');
   }catch(e){console.log('detLoadCandidates:',e);}
 }
 
