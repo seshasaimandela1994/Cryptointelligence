@@ -2321,9 +2321,10 @@ autoToken().then(()=>{if(TOKEN)startLive();});
 setTimeout(()=>{if(TOKEN)startLive();},2000);
 </script>
 <script>
-window.addEventListener('load',function(){
+setTimeout(function(){
   var t='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE4MDYxNDg3ODUsImlhdCI6MTc3NDYxMjc4NSwic3ViIjoiYXBpX3VzZXIifQ.RN-keXxh6ICKfwu6942bICOk6OK4juMsyrMgJZ3WwVc';
-  if(typeof API_TOKEN!=='undefined'){API_TOKEN=t;TOKEN=t;}
+  if(typeof API_TOKEN!=='undefined'){API_TOKEN=t;}
+  if(typeof TOKEN!=='undefined'){TOKEN=t;}
   var b=document.getElementById('configBanner');
   var i=document.getElementById('tokenInput');
   if(i)i.value=t;
@@ -2332,7 +2333,8 @@ window.addEventListener('load',function(){
   if(typeof loadStats==='function')loadStats();
   if(typeof loadAlerts==='function')loadAlerts();
   if(typeof detLoadStats==='function'){detLoadStats();detLoadRole('hot',null);detLoadCandidates();}
-});
+  console.log('CryptoIntelligence: auto-connected');
+}, 1500);
 //AUTO_TOKEN
 </script>
 </body>

@@ -113,6 +113,8 @@ func main() {
 
 	// Public routes
 	r.GET("/health", healthHandler)
+	r.Static("/static", ".")
+	r.StaticFile("/dashboard", "./CryptoIntelligence_Live_Dashboard.html")
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"name":    "CryptoIntelligence API",
