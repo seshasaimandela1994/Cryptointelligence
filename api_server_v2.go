@@ -113,6 +113,7 @@ func main() {
 
 	// Public routes
 	r.GET("/health", healthHandler)
+	r.GET("/v1/live", liveHandler)
 	r.Static("/static", ".")
 	r.StaticFile("/dashboard", "./CryptoIntelligence_Live_Dashboard.html")
 	r.GET("/", func(c *gin.Context) {
@@ -139,7 +140,7 @@ func main() {
 		v1.POST("/batch",           batchHandler)
 		v1.GET("/cluster/:address", clusterHandler)
 		v1.GET("/stats",            statsHandler)
-	v1.GET("/inflows",          inflowsHandler)
+			v1.GET("/inflows",          inflowsHandler)
 		}
 
 	port := "8080"
@@ -672,5 +673,15 @@ func inflowsHandler(c *gin.Context) {
 		TotalLabel: totalLabel,
 		Tokens:     tokens,
 		UpdatedAt:  time.Now().Format(time.RFC3339),
+	})
+}
+
+func liveHandler(c *gin.Context) {
+	var maxBlock, txCount int64
+	db.QueryRow("SELECT MAX(block_number), COUNT(*) FROM token_transfers").Scan(&maxBlock, &txCount)
+	c.JSON(200, gin.H{
+		"latest_block": maxBlock,
+		"tx_count":     txCount,
+		"status":       "indexing",
 	})
 }

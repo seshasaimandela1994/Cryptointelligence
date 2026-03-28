@@ -2317,6 +2317,20 @@ async function classifyWallet(){
   }catch(e){el.innerHTML=`<div style="font-family:var(--mono);font-size:10px;color:var(--red)">Error: ${e.message}</div>`;}
 }
 
+
+async function loadLiveIndexer(){
+  try{
+    const r=await fetch(API+'/v1/live');
+    const d=await r.json();
+    const bn=document.getElementById('liveBlockNum');
+    const tc=document.getElementById('liveTxCount');
+    if(bn)bn.textContent='Block #'+Number(d.latest_block).toLocaleString();
+    if(tc)tc.textContent=Number(d.tx_count).toLocaleString()+' transfers indexed';
+  }catch(e){}
+}
+
+setInterval(loadLiveIndexer, 3000);
+
 autoToken().then(()=>{if(TOKEN)startLive();});
 setTimeout(()=>{if(TOKEN)startLive();},2000);
 
