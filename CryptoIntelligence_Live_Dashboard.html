@@ -1470,7 +1470,7 @@ function goPage(name,el){
   el.classList.add('active');
   if(name==='screen')renderScreenDist();
   if(name==='exchanges')renderExchangeTable(exchangeData);
-  if(name==='cexv2'){loadExchangesFromAPI();renderCexV2Table(cexV2Data);}
+  if(name==='cexv2'){loadAllExchangesFromDB();}
   if(name==='detection'){detLoadStats();detLoadRole('hot',null);detLoadCandidates();}
   if(name==='alerts')loadAlertsFull();
 }
