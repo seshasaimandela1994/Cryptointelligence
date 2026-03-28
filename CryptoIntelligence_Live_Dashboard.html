@@ -1474,19 +1474,50 @@ const fcls=f=>{if(['SANCTIONS','MIXER','SCAM','HACK'].some(x=>f.includes(x)))ret
 const clock=()=>{document.getElementById('navClock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})};
 setInterval(clock,1000);
 
-async function loadEthPrice(){
-  try{
-    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd&include_24hr_change=true');
-    const d=await r.json();
-    const price=d.ethereum.usd;
-    const change=d.ethereum.usd_24h_change;
-    const pv=document.getElementById('ethPriceVal');
-    const cv=document.getElementById('ethChangeVal');
-    if(pv)pv.textContent='$'+price.toLocaleString();
+function startEthPriceFeed(){
+  var prevPrice=0;
+  var ws=new WebSocket('wss://stream.binance.com:9443/ws/ethusdt@ticker');
+  ws.onmessage=function(e){
+    var d=JSON.parse(e.data);
+    var price=parseFloat(d.c);
+    var change=parseFloat(d.P);
+    var pv=document.getElementById('ethPriceVal');
+    var cv=document.getElementById('ethChangeVal');
+    if(pv){
+      pv.textContent='$'+price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(prevPrice>0){
+        pv.style.color=price>prevPrice?'var(--green)':price<prevPrice?'var(--red)':'var(--amber)';
+        setTimeout(function(){pv.style.color='var(--amber)';},800);
+      }
+      prevPrice=price;
+    }
     if(cv){
       cv.textContent=(change>=0?'+':'')+change.toFixed(2)+'% 24h';
       cv.style.color=change>=0?'var(--green)':'var(--red)';
     }
+  };
+  ws.onerror=function(){
+    // Fallback to REST if WebSocket fails
+    fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT')
+      .then(r=>r.json()).then(d=>{
+        var pv=document.getElementById('ethPriceVal');
+        var cv=document.getElementById('ethChangeVal');
+        if(pv)pv.textContent='$'+parseFloat(d.lastPrice).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        if(cv){cv.textContent=(parseFloat(d.priceChangePercent)>=0?'+':'')+parseFloat(d.priceChangePercent).toFixed(2)+'% 24h';cv.style.color=parseFloat(d.priceChangePercent)>=0?'var(--green)':'var(--red)';}
+      }).catch(function(){});
+  };
+  ws.onclose=function(){setTimeout(startEthPriceFeed,3000);}; // reconnect
+}
+async function loadEthPrice(){
+  try{
+    const r=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=ETHUSDT');
+    const d=await r.json();
+    const price=parseFloat(d.lastPrice);
+    const change=parseFloat(d.priceChangePercent);
+    const pv=document.getElementById('ethPriceVal');
+    const cv=document.getElementById('ethChangeVal');
+    if(pv)pv.textContent='$'+price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(cv){cv.textContent=(change>=0?'+':'')+change.toFixed(2)+'% 24h';cv.style.color=change>=0?'var(--green)':'var(--red)';}
   }catch(e){}
 }
 async function loadLiveBlock(){
@@ -1505,7 +1536,6 @@ async function loadLiveBlock(){
   }catch(e){}
 }
 loadEthPrice();loadLiveBlock();
-setInterval(loadEthPrice,30000);
 setInterval(loadLiveBlock,3000);
 
 
