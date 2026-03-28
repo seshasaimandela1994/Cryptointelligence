@@ -30,7 +30,7 @@ var jwtSecret = []byte("cryptointelligence-secret-2026")
 // Cache TTLs
 const (
 	ttlRisk    = 1 * time.Hour
-	ttlStats   = 5 * time.Minute
+	ttlStats   = 30 * time.Second
 	ttlCluster = 30 * time.Minute
 	ttlAddress = 1 * time.Hour
 )
@@ -562,7 +562,9 @@ func statsHandler(c *gin.Context) {
 	db.QueryRow("SELECT COUNT(DISTINCT block_number) FROM token_transfers").Scan(&totalBlocks)
 	db.QueryRow("SELECT COUNT(*) FROM address_labels").Scan(&totalLabelled)
 	db.QueryRow("SELECT COUNT(*) FROM clusters").Scan(&totalClusters)
-	db.QueryRow("SELECT COUNT(*) FROM address_labels WHERE is_primary = TRUE").Scan(&totalAddresses)
+	// Count unique from_addresses in token_transfers as total addresses
+	db.QueryRow(`SELECT COUNT(DISTINCT from_address) FROM token_transfers 
+		WHERE from_address != '0x0000000000000000000000000000000000000000'`).Scan(&totalAddresses)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='CRITICAL'").Scan(&criticalCount)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='HIGH'").Scan(&highCount)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='MEDIUM'").Scan(&mediumCount)
