@@ -306,32 +306,7 @@ func cexTopByRoleHandler(c *gin.Context) {
 	role := c.Param("role")
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	if limit > 100 { limit = 100 }
-	type topQuery struct { table, scoreCol, usdCol, sendersCol, receiversCol string }
-	roleMap := map[string]topQuery{
-		"hot":     {"mv_wallet_hot_candidates",     "hot_candidate_score",     "total_outbound_usd_30d", "0", "total_unique_receivers_30d"},
-		"deposit": {"mv_wallet_deposit_candidates", "deposit_candidate_score", "total_inbound_usd_30d",  "total_unique_senders_30d", "0"},
-		"cold":    {"mv_wallet_cold_scores",        "cold_score",              "balance_usd",            "0", "0"},
-	}
-	tq, ok := roleMap[role]
-	if !ok { c.JSON(400, gin.H{"error": "role must be deposit, hot, or cold"}); return }
-	rows, err := cexDB.Query(fmt.Sprintf(`SELECT t.address,
-		ROUND(COALESCE(t.%s,0)::numeric,4),
-		COALESCE(t.%s,0),
-		COALESCE(t.%s,0),
-		COALESCE(t.%s,0),
-		COALESCE(ee.canonical_name,'NOT LABELED'),
-		COALESCE(ewl.wallet_role::text,'')
-		FROM %s t
-		LEFT JOIN wallet_addresses wa ON wa.address=t.address
-		LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=wa.wallet_id AND ewl.is_active=TRUE
-		LEFT JOIN exchange_entities ee ON ee.exchange_id=ewl.exchange_id
-		WHERE COALESCE(t.%s,0) > 0.30
-		ORDER BY t.%s DESC NULLS LAST
-		LIMIT $1`, tq.scoreCol, tq.usdCol, tq.sendersCol, tq.receiversCol,
-		tq.table, tq.scoreCol, tq.scoreCol), limit)
-	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
-	defer rows.Close()
-	type Result struct {
+	type topResult struct {
 		Address   string  `json:"address"`
 		Score     float64 `json:"score"`
 		USD       float64 `json:"usd_value_30d"`
@@ -340,9 +315,55 @@ func cexTopByRoleHandler(c *gin.Context) {
 		Exchange  string  `json:"known_exchange"`
 		KnownRole string  `json:"known_role,omitempty"`
 	}
-	var results []Result
+
+	var queryStr string
+	switch role {
+	case "hot":
+		queryStr = `SELECT t.address,
+			ROUND(COALESCE(t.hot_candidate_score,0)::numeric,4),
+			COALESCE(t.total_outbound_usd_30d,0), 0, COALESCE(t.total_unique_receivers_30d,0),
+			COALESCE(ee.canonical_name,'NOT LABELED'), COALESCE(ewl.wallet_role::text,'')
+			FROM mv_wallet_hot_candidates t
+			LEFT JOIN wallet_addresses wa ON wa.address=t.address
+			LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=wa.wallet_id AND ewl.is_active=TRUE
+			LEFT JOIN exchange_entities ee ON ee.exchange_id=ewl.exchange_id
+			WHERE COALESCE(t.hot_candidate_score,0) > 0.30
+			ORDER BY t.hot_candidate_score DESC, t.total_outbound_usd_30d DESC NULLS LAST
+			LIMIT $1`
+	case "deposit":
+		queryStr = `SELECT t.address,
+			ROUND(COALESCE(t.deposit_candidate_score,0)::numeric,4),
+			COALESCE(t.total_inbound_usd_30d,0), COALESCE(t.total_unique_senders_30d,0), 0,
+			COALESCE(ee.canonical_name,'NOT LABELED'), COALESCE(ewl.wallet_role::text,'')
+			FROM mv_wallet_deposit_candidates t
+			LEFT JOIN wallet_addresses wa ON wa.address=t.address
+			LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=wa.wallet_id AND ewl.is_active=TRUE
+			LEFT JOIN exchange_entities ee ON ee.exchange_id=ewl.exchange_id
+			WHERE COALESCE(t.deposit_candidate_score,0) > 0.30
+			ORDER BY t.deposit_candidate_score DESC, t.total_inbound_usd_30d DESC NULLS LAST
+			LIMIT $1`
+	case "cold":
+		queryStr = `SELECT t.address,
+			ROUND(COALESCE(t.cold_score,0)::numeric,4),
+			COALESCE(t.balance_usd,0), 0, 0,
+			COALESCE(ee.canonical_name,'NOT LABELED'), COALESCE(ewl.wallet_role::text,'')
+			FROM mv_wallet_cold_scores t
+			LEFT JOIN wallet_addresses wa ON wa.address=t.address
+			LEFT JOIN exchange_wallet_labels ewl ON ewl.wallet_id=wa.wallet_id AND ewl.is_active=TRUE
+			LEFT JOIN exchange_entities ee ON ee.exchange_id=ewl.exchange_id
+			WHERE COALESCE(t.cold_score,0) > 0.30
+			ORDER BY t.cold_score DESC, t.balance_usd DESC NULLS LAST
+			LIMIT $1`
+	default:
+		c.JSON(400, gin.H{"error": "role must be deposit, hot, or cold"})
+		return
+	}
+	rows, err := cexDB.Query(queryStr, limit)
+	if err != nil { c.JSON(500, gin.H{"error": err.Error()}); return }
+	defer rows.Close()
+	var results []topResult
 	for rows.Next() {
-		var r Result
+		var r topResult
 		rows.Scan(&r.Address, &r.Score, &r.USD, &r.Senders, &r.Receivers, &r.Exchange, &r.KnownRole)
 		results = append(results, r)
 	}
