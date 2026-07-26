@@ -564,7 +564,7 @@ func statsHandler(c *gin.Context) {
 	db.QueryRow("SELECT COUNT(*) FROM address_labels").Scan(&totalLabelled)
 	db.QueryRow("SELECT COUNT(*) FROM clusters").Scan(&totalClusters)
 	// Count unique from_addresses in token_transfers as total addresses
-	db.QueryRow("SELECT COUNT(*) FROM wallet_addresses WHERE chain_id=1").Scan(&totalAddresses)
+	db.QueryRow("SELECT COUNT(DISTINCT from_address) FROM token_transfers").Scan(&totalAddresses)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='CRITICAL'").Scan(&criticalCount)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='HIGH'").Scan(&highCount)
 	db.QueryRow("SELECT COUNT(*) FROM risk_scores WHERE risk_level='MEDIUM'").Scan(&mediumCount)
