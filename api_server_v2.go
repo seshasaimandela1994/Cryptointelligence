@@ -142,6 +142,7 @@ func main() {
 		v1.GET("/stats",            statsHandler)
 			v1.GET("/inflows",          inflowsHandler)
 	v1.GET("/indexer-jobs",     indexerJobsHandler)
+	v1.GET("/classification",   classificationHandler)
 		}
 
 	port := "8080"
@@ -706,4 +707,68 @@ func indexerJobsHandler(c *gin.Context) {
 		jobs = append(jobs, j)
 	}
 	c.JSON(200, jobs)
+}
+
+func classificationHandler(c *gin.Context) {
+	type CategoryCount struct {
+		Category string `json:"category"`
+		Count    int    `json:"count"`
+	}
+	type SubCategoryCount struct {
+		Category    string `json:"category"`
+		SubCategory string `json:"sub_category"`
+		Count       int    `json:"count"`
+	}
+
+	rows, err := db.Query(`
+		SELECT category, COUNT(*) as cnt
+		FROM address_labels
+		GROUP BY category
+		ORDER BY cnt DESC`)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	var categories []CategoryCount
+	totalLabelled := 0
+	for rows.Next() {
+		var cc CategoryCount
+		rows.Scan(&cc.Category, &cc.Count)
+		categories = append(categories, cc)
+		totalLabelled += cc.Count
+	}
+
+	subRows, err := db.Query(`
+		SELECT category, sub_category, COUNT(*) as cnt
+		FROM address_labels
+		WHERE sub_category IS NOT NULL
+		GROUP BY category, sub_category
+		ORDER BY cnt DESC
+		LIMIT 30`)
+	var subCategories []SubCategoryCount
+	if err == nil {
+		defer subRows.Close()
+		for subRows.Next() {
+			var sc SubCategoryCount
+			subRows.Scan(&sc.Category, &sc.SubCategory, &sc.Count)
+			subCategories = append(subCategories, sc)
+		}
+	}
+
+	var sanctionedCount int
+	db.QueryRow(`SELECT COUNT(*) FROM risk_scores WHERE sanctions_hit = TRUE`).Scan(&sanctionedCount)
+
+	var totalAddr int
+	db.QueryRow(`SELECT COUNT(DISTINCT from_address) FROM token_transfers`).Scan(&totalAddr)
+
+	c.JSON(200, gin.H{
+		"total_addresses":   totalAddr,
+		"total_labelled":    totalLabelled,
+		"sanctioned_count":  sanctionedCount,
+		"categories":        categories,
+		"sub_categories":    subCategories,
+		"updated_at":        time.Now().Format(time.RFC3339),
+	})
 }
