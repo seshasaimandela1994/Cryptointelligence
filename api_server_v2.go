@@ -141,6 +141,7 @@ func main() {
 		v1.GET("/cluster/:address", clusterHandler)
 		v1.GET("/stats",            statsHandler)
 			v1.GET("/inflows",          inflowsHandler)
+	v1.GET("/indexer-jobs",     indexerJobsHandler)
 		}
 
 	port := "8080"
@@ -684,4 +685,25 @@ func liveHandler(c *gin.Context) {
 		"tx_count":     txCount,
 		"status":       "indexing",
 	})
+}
+
+func indexerJobsHandler(c *gin.Context) {
+	type JobStatus struct {
+		JobName   string    `json:"job_name"`
+		LastBlock int64     `json:"last_block"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+	rows, err := db.Query("SELECT job_name, last_block, updated_at FROM indexer_checkpoints ORDER BY job_name")
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+	var jobs []JobStatus
+	for rows.Next() {
+		var j JobStatus
+		rows.Scan(&j.JobName, &j.LastBlock, &j.UpdatedAt)
+		jobs = append(jobs, j)
+	}
+	c.JSON(200, jobs)
 }
